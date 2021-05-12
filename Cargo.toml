@@ -1,0 +1,26 @@
+[package]
+name = "drogue-cloud-tests"
+version = "0.5.0"
+authors = ["Jens Reimann <jreimann@redhat.com>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+env_logger = "0.8"
+anyhow = "1"
+#openidconnect = "2"
+reqwest = { version = "0.11", features = ["json"] }
+serde_json = "1"
+
+async-trait = "0.1"
+test-context = "0.1"
+futures = "0.3"
+#lazy_static = "1"
+#async_once = "0.2"
+
+fantoccini = "0.17"
+#webdriver-install = "0.3.2"
+
+uuid = { version = "0.8", features = ["v4"] }
+
+tokio = { version = "1", features = ["full"] }
