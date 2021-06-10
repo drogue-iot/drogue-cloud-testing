@@ -23,7 +23,13 @@ jobs:
           cd release
           curl -sL "${{ github.event.inputs.releaseUrl }}" -o release.zip
           unzip release.zip
+          cd drogue-install-*
+          mv . ..
           find .
+
+      - name: Check for installer script
+        run: |
+          test -f ./scripts/drogue.sh
 
       - name: Create Kind cluster
         uses: helm/kind-action@v1.1.0
