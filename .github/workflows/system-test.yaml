@@ -1,0 +1,40 @@
+name: System Test
+on:
+  workflow_dispatch:
+    inputs:
+      releaseUrl:
+        description: The URL to the release file
+        required: true
+
+jobs:
+
+  test:
+    name: Test
+    runs-on: ubuntu-20.04
+
+    env:
+      CLUSTER: "kind"
+
+    steps:
+
+      - name: Download release
+        run: |
+          mkdir release
+          cd release
+          curl -L "${{ github.event.inputs.releaseUrl }}" -o release.zip
+          unzip release.zip
+          find .
+
+      - name: Create Kind cluster
+        uses: helm/kind-action@v1.1.0
+        with:
+          wait: 300s
+          cluster_name: kind
+
+      - name: Deploy Drogue
+        run: ./scripts/drogue.sh
+        timeout-minutes: 20
+
+      - name: Run tests
+        run: |
+          make
