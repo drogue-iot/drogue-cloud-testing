@@ -24,7 +24,7 @@ jobs:
           curl -sL "${{ github.event.inputs.releaseUrl }}" -o release.zip
           unzip release.zip
           cd drogue-install-*
-          mv . ..
+          mv * ..
           find .
 
       - name: Check for installer script
