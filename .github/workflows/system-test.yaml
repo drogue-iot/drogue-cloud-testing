@@ -21,7 +21,7 @@ jobs:
         run: |
           mkdir release
           cd release
-          curl -L "${{ github.event.inputs.releaseUrl }}" -o release.zip
+          curl -sL "${{ github.event.inputs.releaseUrl }}" -o release.zip
           unzip release.zip
           find .
 
