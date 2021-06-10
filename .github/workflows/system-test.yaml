@@ -38,7 +38,9 @@ jobs:
           cluster_name: kind
 
       - name: Deploy Drogue
-        run: ./scripts/drogue.sh
+        run: |
+          cd release
+          ./scripts/drogue.sh
         timeout-minutes: 20
 
       - name: Run tests
