@@ -14,8 +14,8 @@ else
 $(error Unknown cluster type: $CLUSTER)
 endif
 
-CONSOLE_URL ?= $(shell minikube service -n "$(DROGUE_NS)" console --url)
-API_URL ?= $(shell minikube service -n "$(DROGUE_NS)" console-backend --url)
+CONSOLE_URL ?= http://console.$(DOMAIN)
+API_URL ?= http://api.$(DOMAIN)
 RUST_LOG ?= info
 
 .PHONY: start
