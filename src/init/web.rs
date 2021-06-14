@@ -1,5 +1,6 @@
 use anyhow::Context;
 use fantoccini::{Client, ClientBuilder};
+use serde_json::{json, Map};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug)]
@@ -9,8 +10,18 @@ pub struct WebDriver {
 
 impl WebDriver {
     pub async fn new() -> anyhow::Result<Self> {
+        let mut cap = Map::new();
+
+        if std::env::var_os("HEADLESS")
+            .map(|s| s == "true")
+            .unwrap_or_default()
+        {
+            cap.insert("headless".into(), true.into());
+        }
+
         Ok(Self {
             client: ClientBuilder::native()
+                .capabilities(cap)
                 .connect("http://localhost:4444")
                 .await
                 .context("Failed to connect to web driver")?,
