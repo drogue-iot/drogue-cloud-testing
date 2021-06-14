@@ -6,9 +6,9 @@ DROGUE_NS ?= drogue-iot
 
 CLUSTER ?= minikube
 
-ifeq ($(CLUSTER),"minikube")
+ifeq ($(CLUSTER), minikube)
 DOMAIN=$(minikube ip).nip.io
-else ifeq ($(CLUSTER),"kind")
+else ifeq ($(CLUSTER), kind)
 DOMAIN=$(kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}').nip.io
 else
 $(error Unknown cluster type: $(CLUSTER))
