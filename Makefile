@@ -3,15 +3,25 @@ all: test
 export SHELL:=bash
 
 DROGUE_NS ?= drogue-iot
+
+CLUSTER=minikube
+ifeq ($CLUSTER,"minikube")
+	DOMAIN=$(minikube ip).nip.io
+else ifeq ($CLUSTER,"kind")
+	DOMAIN=$(kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}').nip.io
+else
+	$(error Unknown cluster type: $CLUSTER)
+endif
+
 CONSOLE_URL ?= $(shell minikube service -n "$(DROGUE_NS)" console --url)
-BACKEND_URL ?= $(shell minikube service -n "$(DROGUE_NS)" console-backend --url)
+API_URL ?= $(shell minikube service -n "$(DROGUE_NS)" console-backend --url)
 RUST_LOG ?= info
 
 .PHONY: start
 start:
 	-drg context delete system-tests
 	-pkill geckodriver
-	$(HOME)/.webdrivers/geckodriver &
+	geckodriver &
 
 .PHONY: stop
 stop:
@@ -25,7 +35,7 @@ test: start
 test-run:
 	env \
 		CONSOLE_URL=$(CONSOLE_URL) \
-		BACKEND_URL=$(BACKEND_URL) \
+		API_URL=$(API_URL) \
 		RUST_LOG=$(RUST_LOG) \
 		TEST_USER=admin \
  		TEST_PASSWORD=admin123456 \
