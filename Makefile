@@ -9,10 +9,9 @@ CLUSTER ?= minikube
 PROTO ?= http
 
 ifeq ($(CLUSTER), minikube)
-DOMAIN=$(minikube ip).nip.io
+DOMAIN=$(shell minikube ip).nip.io
 else ifeq ($(CLUSTER), kind)
-cmd:=kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'
-DOMAIN=$($(cmd)).nip.io
+DOMAIN=$(shell 'kubectl get node kind-control-plane -o jsonpath='"'"'{.status.addresses[?(@.type == "InternalIP")].address}'"'").nip.io
 else
 $(error Unknown cluster type: $(CLUSTER))
 endif
@@ -23,9 +22,9 @@ RUST_LOG ?= info
 
 .PHONY: info
 info:
-	echo API: $(API_URL)
-	echo Console: $(CONSOLE_URL)
-	echo NS: $(DROGUE_NS)
+	@echo API: $(API_URL)
+	@echo Console: $(CONSOLE_URL)
+	@echo NS: $(DROGUE_NS)
 
 .PHONY: start
 start: info
