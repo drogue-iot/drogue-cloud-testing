@@ -12,8 +12,17 @@ impl WebDriver {
     pub async fn new() -> anyhow::Result<Self> {
         let mut cap = Map::new();
 
+        let mut args = vec![];
+
+        if std::env::var("HEADLESS")
+            .map(|s| s == "true")
+            .unwrap_or_default()
+        {
+            args.push("-headless");
+        }
+
         let opts = json!({
-            "args": [ "-headless" ],
+            "args": args,
         });
 
         cap.insert("moz:firefoxOptions".into(), opts);
