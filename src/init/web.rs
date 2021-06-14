@@ -12,12 +12,11 @@ impl WebDriver {
     pub async fn new() -> anyhow::Result<Self> {
         let mut cap = Map::new();
 
-        if std::env::var_os("HEADLESS")
-            .map(|s| s == "true")
-            .unwrap_or_default()
-        {
-            cap.insert("headless".into(), true.into());
-        }
+        let opts = json!({
+            "args": [ "-headless" ],
+        });
+
+        cap.insert("moz:firefoxOptions".into(), opts);
 
         Ok(Self {
             client: ClientBuilder::native()
