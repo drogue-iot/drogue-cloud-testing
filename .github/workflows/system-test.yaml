@@ -21,11 +21,11 @@ jobs:
 
       - name: Install drg
         run: |
-          mkdir -p $GITHUB_WORKSPACE/bin
+          mkdir -p "$HOME/.local/bin"
           curl -sL https://github.com/drogue-iot/drg/releases/download/v0.5.1/drg-0.5.1-linux-amd64.tar.gz -o drg.tar.gz
           tar --strip-components=1 -xvzf drg.tar.gz
-          mv drg $GITHUB_WORKSPACE/bin
-          echo "::add-path::$GITHUB_WORKSPACE/bin"
+          mv drg "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Download release
         run: |
