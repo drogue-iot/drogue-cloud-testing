@@ -36,6 +36,12 @@ jobs:
           tar -xzvf geckodriver.tar.gz
           mv geckodriver "$HOME/.local/bin"
 
+      - name: Install helm
+        run: |
+          curl -sL https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz -o helm.tar.gz
+          tar xzf helm.tar.gz
+          mv linux-amd64/helm "$HOME/.local/bin"
+
       - name: Download release
         run: |
           mkdir release
