@@ -21,11 +21,14 @@ CONSOLE_URL ?= $(PROTO)://console.$(DOMAIN)
 API_URL ?= $(PROTO)://api.$(DOMAIN)
 RUST_LOG ?= info
 
-.PHONY: start
-start:
+.PHONY: info
+info:
 	echo API: $(API_URL)
 	echo Console: $(CONSOLE_URL)
 	echo NS: $(DROGUE_NS)
+
+.PHONY: start
+start: info
 	-drg context delete system-tests
 	-pkill geckodriver
 	geckodriver &
