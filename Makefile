@@ -5,12 +5,13 @@ export SHELL:=bash
 DROGUE_NS ?= drogue-iot
 
 CLUSTER=minikube
+
 ifeq ($CLUSTER,"minikube")
-	DOMAIN=$(minikube ip).nip.io
+DOMAIN=$(minikube ip).nip.io
 else ifeq ($CLUSTER,"kind")
-	DOMAIN=$(kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}').nip.io
+DOMAIN=$(kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}').nip.io
 else
-	$(error Unknown cluster type: $CLUSTER)
+$(error Unknown cluster type: $CLUSTER)
 endif
 
 CONSOLE_URL ?= $(shell minikube service -n "$(DROGUE_NS)" console --url)
