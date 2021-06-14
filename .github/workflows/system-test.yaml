@@ -19,6 +19,12 @@ jobs:
 
       - uses: actions/checkout@v2
 
+      - name: Install drg
+        run: |
+          curl -sL https://github.com/drogue-iot/drg/releases/download/v0.5.1/drg-0.5.1-linux-amd64.tar.gz -o drg.tar.gz
+          tar --strip-components 1 xvzf drg.tar.gz
+          mv drg /usr/local/bin
+
       - name: Download release
         run: |
           mkdir release
