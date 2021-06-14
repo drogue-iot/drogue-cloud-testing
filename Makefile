@@ -6,20 +6,26 @@ DROGUE_NS ?= drogue-iot
 
 CLUSTER ?= minikube
 
+PROTO ?= http
+
 ifeq ($(CLUSTER), minikube)
 DOMAIN=$(minikube ip).nip.io
 else ifeq ($(CLUSTER), kind)
-DOMAIN=$(kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}').nip.io
+cmd:=kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'
+DOMAIN=$($(cmd)).nip.io
 else
 $(error Unknown cluster type: $(CLUSTER))
 endif
 
-CONSOLE_URL ?= http://console.$(DOMAIN)
-API_URL ?= http://api.$(DOMAIN)
+CONSOLE_URL ?= $(PROTO)://console.$(DOMAIN)
+API_URL ?= $(PROTO)://api.$(DOMAIN)
 RUST_LOG ?= info
 
 .PHONY: start
 start:
+	echo API: $(API_URL)
+	echo Console: $(CONSOLE_URL)
+	echo NS: $(DROGUE_NS)
 	-drg context delete system-tests
 	-pkill geckodriver
 	geckodriver &
