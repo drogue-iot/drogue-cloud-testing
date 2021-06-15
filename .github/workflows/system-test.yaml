@@ -74,7 +74,7 @@ jobs:
       - name: Check for installer script
         run: |
           cd release
-          test -f ./scripts/drogue.sh
+          test -x ./scripts/drgadm
 
       - name: Create Kind cluster
         uses: helm/kind-action@v1.1.0
@@ -85,7 +85,7 @@ jobs:
       - name: Deploy Drogue
         run: |
           cd release
-          ./scripts/drogue.sh
+          ./scripts/drgadm deploy -m
         timeout-minutes: 20
 
       - name: Run tests
