@@ -84,6 +84,8 @@ jobs:
           config: kind/cluster-config.yaml
 
       - name: Deploy Drogue
+        env:
+          DEBUG: "true"
         run: |
           cd release
           ./scripts/drgadm deploy -m
