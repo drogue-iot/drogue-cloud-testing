@@ -112,7 +112,7 @@ impl Drg {
             &url,
             "-t",
             &refresh_token.as_ref(),
-            "--context-name",
+            "--context",
             CONTEXT,
         ])?;
         Ok(())
