@@ -17,7 +17,7 @@ impl Drg {
 
     pub async fn auto_login(c: &mut WebDriver) -> anyhow::Result<Self> {
         let console_url = std::env::var("CONSOLE_URL").expect("Missing 'CONSOLE_URL' variable");
-        let url = std::env::var("BACKEND_URL").expect("Missing 'BACKEND_URL' variable");
+        let url = std::env::var("API_URL").expect("Missing 'API_URL' variable");
 
         // get endpoints
 
