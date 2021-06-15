@@ -1,1 +1,2 @@
 mod drg;
+mod registry;
