@@ -90,4 +90,4 @@ jobs:
 
       - name: Run tests
         run: |
-          make CLUSTER=kind
+          make CLUSTER=kind HEADLESS=true
