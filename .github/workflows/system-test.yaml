@@ -14,9 +14,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-hcloud@v1
+      - uses: actions/setup-hcloud-hetzner-cloud-cli@v1
 
-      - name: Check hcloud binrary
+      - name: Check hcloud binary
         env:
           HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
         run: hcloud version
@@ -132,9 +132,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ always() }} # the runner must always be deleted
     steps:
-      - uses: actions/setup-hcloud@v1
+      - uses: actions/setup-hcloud-hetzner-cloud-cli@v1
 
-      - name: Check hcloud binrary
+      - name: Check hcloud binary
         env:
           HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
         run: hcloud version
