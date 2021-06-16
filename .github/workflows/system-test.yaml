@@ -9,7 +9,7 @@ on:
 jobs:
 
   create-runner:
-    name: Create test runner
+    name: Create runner
     runs-on: ubuntu-20.04
 
     steps:
@@ -160,7 +160,7 @@ jobs:
           path: logs
 
   destroy-runner:
-    name: Destroy test runner
+    name: Destroy runner
     needs:
       - create-runner
       - test
