@@ -85,7 +85,7 @@ packages:
 
 users:
   - name: builder
-    groups: wheel
+    groups: wheel,docker
     primary_group: builder
     sudo: ALL=(ALL) NOPASSWD:ALL
 
