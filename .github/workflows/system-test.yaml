@@ -42,10 +42,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.API_PAT }}
         run: |
 
-          ID=$(gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id")
+          ID=$(gh api repos/${{ github.repository }}/actions/runners --jq '.runners[] | select(.name=="testing-runner-${{github.run_id}}") | .id')
           while [[ -z "$ID" ]]; do
             sleep
-            ID=$(gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id")
+            ID=$(gh api repos/${{ github.repository }}/actions/runners --jq '.runners[] | select(.name=="testing-runner-${{github.run_id}}") | .id')
           done
 
           echo ::set-output name=id::${ID}
@@ -168,7 +168,7 @@ jobs:
         # Although we have the runner ID in the create step, it may be that there is race condition between
         # failing to detect the creation and destroying. So we try to find the runner now anyway.
         run: |
-          for id in $(gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id"); do
+          for id in $(gh api repos/${{ github.repository }}/actions/runners --jq '.runners[] | select(.name=="testing-runner-${{github.run_id}}") | .id'); do
             echo "ID: $id"
             gh api -X DELETE repos/${{ github.repository }}/actions/runners/$id
           done
