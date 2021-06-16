@@ -28,12 +28,12 @@ jobs:
         run: |
           TOKEN=$(gh api -X POST repos/${{ github.repository }}/actions/runners/registration-token --template '{{ .token }}')
 
-          sed "s/@@TOKEN@@/${TOKEN}/g" hcloud/cloud-init-fedora.yaml | \
+          sed "s/@@TOKEN@@/${TOKEN}/g" hcloud/cloud-init-ubuntu.yaml | \
           sed 's/@@RUNNER@@/${{github.run_id}}/g' > init.yaml
 
           cat init.yaml
 
-          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image fedora-34 --type ccx12 --ssh-key 3746242 --user-data-from-file init.yaml
+          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-20.04 --type ccx12 --ssh-key 3746242 --user-data-from-file init.yaml
 
       - name: Waiting for runner to become ready
         id: runner
@@ -77,7 +77,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo dnf install -y gcc openssl-devel
+          sudo apt-get install gcc libssl-dev
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
