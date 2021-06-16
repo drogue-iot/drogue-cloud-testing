@@ -8,7 +8,7 @@ packages:
   - libkrb5-3
   - zlib1g
   - libssl1.1
-  - libicu63
+  - libicu66
   - curl
   - unzip
 
