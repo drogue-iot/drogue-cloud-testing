@@ -80,7 +80,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get -y install gcc libssl-dev
+          sudo apt-get -y install gcc libssl-dev make
 
       - run: env | sort
 
