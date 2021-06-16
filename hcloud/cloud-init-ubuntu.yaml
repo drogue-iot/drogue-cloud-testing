@@ -82,6 +82,7 @@ packages:
   - curl
   - unzip
   - docker-ce
+  - jq
 
 users:
   - name: builder
