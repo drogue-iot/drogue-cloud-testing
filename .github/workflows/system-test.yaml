@@ -8,9 +8,38 @@ on:
 
 jobs:
 
+  create-runner:
+    name: Setup test runner
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-hcloud@v1
+
+      - name: Check hcloud binrary
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: hcloud version
+
+      - name: Create runner
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: |
+          TOKEN=$(gh api -X POST repos/${{ github.repository }}/actions/runners/registration-token --template '{{ .token }}')
+
+          sed 's/@@TOKEN@@/${TOKEN}/g' hcloud/cloud-init-fedora.yaml | \
+          sed 's/@@RUNNER@@/${{github.run_id}}/g' > init.yaml
+
+          cat init.yaml
+
+          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image fedora-34 --type ccx12 --user-data-from-file init.yaml
+
   test:
-    name: Test
-    runs-on: [ "self-hosted", "drogue-cloud-testing" ]
+    name: Run tests
+    runs-on: [ "self-hosted", "hetzner" ]
+
+    needs:
+      - create-runner
 
     env:
       CLUSTER: "kind"
@@ -29,9 +58,9 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      # - name: Install dependencies
-      #  run: |
-      #    sudo apt-get install gcc libssl-dev
+      - name: Install dependencies
+        run: |
+          sudo apt-get install gcc libssl-dev
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
@@ -94,3 +123,29 @@ jobs:
       - name: Run tests
         run: |
           make CLUSTER=kind HEADLESS=true
+
+  destroy-runner:
+    name: Setup test runner
+    needs:
+      - create-runner
+      - test
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # the runner must always be deleted
+    steps:
+      - uses: actions/setup-hcloud@v1
+
+      - name: Check hcloud binrary
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: hcloud version
+
+      - name: Remove runner
+        run: |
+          for id in gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id"; do
+            gh api -X DELETE repos/${{ github.repository }}/actions/runners/$id
+          done
+
+      - name: Destroy runner
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: hcloud server delete testing-runner-${GITHUB_RUN_ID}
