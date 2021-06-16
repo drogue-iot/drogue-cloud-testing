@@ -36,7 +36,7 @@ jobs:
 
           cat init.yaml
 
-          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-20.04 --type ccx12 --ssh-key 3746242 --user-data-from-file init.yaml
+          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-20.04 --type ccx22 --ssh-key 3746242 --user-data-from-file init.yaml
 
       - name: Waiting for runner to become ready
         id: runner
