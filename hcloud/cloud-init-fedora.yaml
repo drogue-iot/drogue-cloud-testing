@@ -8,6 +8,7 @@ packages:
   - krb5-libs
   - zlib
   - libicu
+  - glibc-devel
   - curl
   - unzip
   - jq

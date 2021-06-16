@@ -79,6 +79,7 @@ packages:
   - zlib1g
   - libssl1.1
   - libicu66
+  - libc-dev
   - curl
   - unzip
   - docker-ce
