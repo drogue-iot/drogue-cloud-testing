@@ -24,6 +24,7 @@ jobs:
       - name: Create runner
         env:
           HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TOKEN=$(gh api -X POST repos/${{ github.repository }}/actions/runners/registration-token --template '{{ .token }}')
 
@@ -140,6 +141,8 @@ jobs:
         run: hcloud version
 
       - name: Remove runner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for id in gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id"; do
             gh api -X DELETE repos/${{ github.repository }}/actions/runners/$id
