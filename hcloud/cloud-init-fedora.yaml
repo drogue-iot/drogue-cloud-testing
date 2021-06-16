@@ -8,7 +8,7 @@ packages:
   - libicu
   - curl
 
-run:
+runcmd:
   - mkdir /run/actions-runner
   - |
     cd /run/actions-runner
