@@ -144,7 +144,9 @@ jobs:
           DEBUG: "true"
         run: |
           cd release
-          ./scripts/drgadm deploy -m
+          ./scripts/drgadm deploy \
+            -m \
+            -s defaults.images.repository=quay.io/ctrontesting
         timeout-minutes: 20
 
       - name: Run tests
