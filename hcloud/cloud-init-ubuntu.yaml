@@ -3,11 +3,11 @@
 package_upgrade: true
 
 packages:
-  - lttng-ust
-  - openssl-libs
-  - krb5-libs
-  - zlib
-  - libicu
+  - liblttng-ust0
+  - libkrb5-3
+  - zlib1g
+  - libssl1.1
+  - libicu63
   - curl
   - unzip
 
