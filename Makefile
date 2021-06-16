@@ -48,6 +48,4 @@ test-run:
 		RUST_LOG=$(RUST_LOG) \
 		TEST_USER=admin \
  		TEST_PASSWORD=admin123456 \
- 		TEST_CLIENT_ID=test \
- 		TEST_CLIENT_SECRET=$(shell kubectl -n "$(DROGUE_NS)" get secret keycloak-client-secret-test -o "jsonpath={.data.CLIENT_SECRET}" | base64 -d) \
 		cargo test -- --test-threads=1 $(TESTS)
