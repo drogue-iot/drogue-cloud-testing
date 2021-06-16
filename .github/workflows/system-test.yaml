@@ -113,6 +113,11 @@ jobs:
           tar xzf helm.tar.gz
           mv linux-amd64/helm "$HOME/.local/bin"
 
+      - name: Install kubectl
+        run: |
+          curl -sL https://dl.k8s.io/release/v1.21.1/bin/linux/amd64/kubectl -o "$HOME/.local/bin/kubectl"
+          chmod a+x "$HOME/.local/bin/kubectl"
+
       - name: Download release
         run: |
           mkdir release
@@ -150,7 +155,8 @@ jobs:
         if: failure()
         run: |
           mkdir logs
-          sudo journalctl > logs/journal.log
+          sudo journalctl > logs/jour nal.log
+          ./.github/scripts/collect_logs.sh logs/ drogue-iot
 
       - name: Upload logs
         if: failure()
