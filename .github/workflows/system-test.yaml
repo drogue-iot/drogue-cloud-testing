@@ -149,7 +149,6 @@ jobs:
         run: |
           mkdir logs
           sudo journalctl > logs/journal.log
-          sudo gzip logs/journal.log
 
       - name: Upload logs
         if: failure()
