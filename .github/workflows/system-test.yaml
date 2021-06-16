@@ -79,7 +79,7 @@ jobs:
         run: |
           sudo apt-get -y install gcc libssl-dev
 
-      - name: Install latest nightly
+      - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
