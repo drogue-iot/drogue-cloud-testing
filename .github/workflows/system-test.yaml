@@ -9,7 +9,7 @@ on:
 jobs:
 
   create-runner:
-    name: Setup test runner
+    name: Create test runner
     runs-on: ubuntu-20.04
 
     steps:
@@ -34,6 +34,22 @@ jobs:
           cat init.yaml
 
           hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image fedora-34 --type ccx12 --user-data-from-file init.yaml
+
+      - name: Waiting for runner to become ready
+        id: runner
+        timeout-minutes: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.API_PAT }}
+        run: |
+
+          ID=$(gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id")
+          while [[ -z "$ID" ]]; do
+            sleep
+            ID=$(gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id")
+          done
+
+          echo ::set-output name=id::${ID}
+
 
   test:
     name: Run tests
@@ -130,7 +146,7 @@ jobs:
     needs:
       - create-runner
       - test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: ${{ always() }} # the runner must always be deleted
     steps:
       - uses: 3bit/setup-hcloud@v1
@@ -149,6 +165,8 @@ jobs:
         if: ${{ always() }} # always remove
         env:
           GITHUB_TOKEN: ${{ secrets.API_PAT }}
+        # Although we have the runner ID in the create step, it may be that there is race condition between
+        # failing to detect the creation and destroying. So we try to find the runner now anyway.
         run: |
           for id in $(gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id"); do
             echo "ID: $id"
