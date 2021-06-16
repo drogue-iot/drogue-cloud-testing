@@ -32,5 +32,5 @@ runcmd:
     - -c
     - |
       cd /home/builder/actions-runner
-      ./svc.sh install
+      ./svc.sh install builder
       ./svc.sh start
