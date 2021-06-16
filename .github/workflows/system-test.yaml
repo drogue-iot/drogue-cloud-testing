@@ -28,7 +28,7 @@ jobs:
         run: |
           TOKEN=$(gh api -X POST repos/${{ github.repository }}/actions/runners/registration-token --template '{{ .token }}')
 
-          sed 's/@@TOKEN@@/${TOKEN}/g' hcloud/cloud-init-fedora.yaml | \
+          sed "s/@@TOKEN@@/${TOKEN}/g" hcloud/cloud-init-fedora.yaml | \
           sed 's/@@RUNNER@@/${{github.run_id}}/g' > init.yaml
 
           cat init.yaml
@@ -140,15 +140,16 @@ jobs:
           HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
         run: hcloud version
 
+      - name: Destroy runner
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: hcloud server delete testing-runner-${GITHUB_RUN_ID}
+
       - name: Remove runner
+        if: ${{ always() }} # always remove
         env:
           GITHUB_TOKEN: ${{ secrets.API_PAT }}
         run: |
           for id in gh api repos/${{ github.repository }}/actions/runners --jq ".[] | select(.name='testing-runner-${{github.run_id}}') | .id"; do
             gh api -X DELETE repos/${{ github.repository }}/actions/runners/$id
           done
-
-      - name: Destroy runner
-        env:
-          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
-        run: hcloud server delete testing-runner-${GITHUB_RUN_ID}
