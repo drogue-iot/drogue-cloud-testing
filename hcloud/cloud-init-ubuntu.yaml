@@ -81,6 +81,7 @@ packages:
   - libicu66
   - libc-dev
   - pkg-config
+  - firefox
   - curl
   - unzip
   - docker-ce

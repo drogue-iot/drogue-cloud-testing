@@ -9,6 +9,7 @@ packages:
   - zlib
   - libicu
   - glibc-devel
+  - firefox
   - curl
   - unzip
   - jq
