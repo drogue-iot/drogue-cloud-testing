@@ -155,7 +155,7 @@ jobs:
         if: failure()
         run: |
           mkdir logs
-          sudo journalctl > logs/jour nal.log
+          sudo journalctl > logs/journal.log
           ./.github/scripts/collect_logs.sh logs/ drogue-iot
 
       - name: Upload logs
