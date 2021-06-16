@@ -11,7 +11,7 @@ PROTO ?= http
 ifeq ($(CLUSTER), minikube)
 DOMAIN=$(shell minikube ip).nip.io
 else ifeq ($(CLUSTER), kind)
-DOMAIN=$(shell kubectl get node kind-control-plane -o jsonpath="'"'{.status.addresses[?(@.type == "InternalIP")].address}'"'").nip.io
+DOMAIN=$(shell kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}').nip.io
 else
 $(error Unknown cluster type: $(CLUSTER))
 endif
