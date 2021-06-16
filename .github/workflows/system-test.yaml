@@ -27,6 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.API_PAT }}
         run: |
           TOKEN=$(gh api -X POST repos/${{ github.repository }}/actions/runners/registration-token --template '{{ .token }}')
+          echo ::add-mask::$TOKEN
 
           sed "s/@@TOKEN@@/${TOKEN}/g" hcloud/cloud-init-ubuntu.yaml | \
           sed 's/@@RUNNER@@/${{github.run_id}}/g' > init.yaml
