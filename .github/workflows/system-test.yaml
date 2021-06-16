@@ -77,7 +77,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo dnf install gcc openssl-dev
+          sudo dnf install gcc openssl-devel
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
