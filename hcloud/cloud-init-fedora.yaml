@@ -25,7 +25,7 @@ runcmd:
     - |
       mkdir /home/builder/actions-runner
       cd /home/builder/actions-runner
-      curl -L https://github.com/actions/runner/releases/download/v2.278.0/actions-runner-linux-x64-2.278.0.tar.gz -o runner.tar.gz
+      curl -L @@RUNNER_URL@@ -o runner.tar.gz
       tar xzf runner.tar.gz
       env ./config.sh --unattended --url https://github.com/drogue-iot/drogue-cloud-testing --labels hetzner,@@RUNNER@@ --replace --token @@TOKEN@@
 
