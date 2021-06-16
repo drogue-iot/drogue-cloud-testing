@@ -8,6 +8,7 @@ packages:
   - zlib1g
   - libssl1.1
   - libicu63
+  - unzip
 
 users:
   - name: builder

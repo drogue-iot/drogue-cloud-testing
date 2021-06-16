@@ -9,6 +9,7 @@ packages:
   - zlib
   - libicu
   - curl
+  - unzip
 
 users:
   - name: builder
