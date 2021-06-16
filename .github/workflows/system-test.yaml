@@ -5,12 +5,16 @@ on:
       releaseUrl:
         description: The URL to the release file
         required: true
+      runner:
+        description: The runner this job should run on
+        required: true
+        default: ubuntu-20.04
 
 jobs:
 
   test:
     name: Test
-    runs-on: ubuntu-20.04
+    runs-on: "{{ github.event.inputs.runner }}"
 
     env:
       CLUSTER: "kind"
