@@ -65,7 +65,7 @@ async fn test_registry_create_app_twice(ctx: &mut TestContext) {
 
     // first attempt must succeed
 
-    let app1 = Application::new(ctx.drg().await.unwrap(), &uuid).expect("Created application");
+    let _app1 = Application::new(ctx.drg().await.unwrap(), &uuid).expect("Created application");
 
     // second attempt needs to fail
     let app2 = Application::new(ctx.drg().await.unwrap(), &uuid);
@@ -83,7 +83,7 @@ async fn test_registry_create_and_delete(ctx: &mut TestContext) {
 
     // first attempt must succeed
 
-    let mut app1 = Application::new(drg, &uuid).expect("Created application");
+    let mut app1 = Application::new(drg.clone(), &uuid).expect("Created application");
     drg.delete_app(&uuid).expect("Deleted application");
 
     // currently deleting a non-existent app returns an error
