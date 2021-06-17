@@ -1,6 +1,9 @@
 use crate::init::web::WebDriver;
 use anyhow::bail;
 use fantoccini::Locator;
+use serde_json::Value;
+use std::io::Write;
+use std::process::Stdio;
 use std::thread::sleep;
 use std::time::Duration;
 use std::{ffi::OsStr, process::Command};
@@ -83,13 +86,33 @@ impl Drg {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let mut cmd = Command::new("drg");
-        cmd.args(args);
-        cmd.env("DRG_CONTEXT", CONTEXT);
-        log::info!("Running: {:?}", cmd);
-        let output = cmd.output();
-        log::info!("Output: {:?}", output);
+        self.run_with_input(args, Option::<&[u8]>::None)
+    }
 
+    pub fn run_with_input<I, S, P>(&self, args: I, input: Option<P>) -> anyhow::Result<String>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+        P: AsRef<[u8]>,
+    {
+        let mut cmd = Command::new("drg");
+        cmd.args(args)
+            .env("DRG_CONTEXT", CONTEXT)
+            .stdin(Stdio::piped());
+
+        log::info!("Running: {:?}", cmd);
+        let output = if let Some(input) = input {
+            let mut child = cmd.spawn()?;
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(input.as_ref())?;
+            }
+
+            child.wait_with_output()
+        } else {
+            cmd.output()
+        };
+
+        log::info!("Output: {:?}", output);
         let output = output?;
 
         if !output.status.success() {
@@ -133,6 +156,22 @@ impl Drg {
 
     pub fn delete_app(&self, name: &str) -> anyhow::Result<()> {
         self.run(&["delete", "app", name])?;
+        Ok(())
+    }
+
+    pub fn create_device(&self, app: &str, name: &str, spec: &Value) -> anyhow::Result<()> {
+        let input = match spec {
+            Value::Object(_) => Some(serde_json::to_vec(spec)?),
+            Value::Null => None,
+            _ => anyhow::bail!("Invalid device spec, but be null or object"),
+        };
+
+        self.run_with_input(&["create", "device", "--app", app, name], input)?;
+        Ok(())
+    }
+
+    pub fn delete_device(&self, app: &str, name: &str) -> anyhow::Result<()> {
+        self.run(&["delete", "device", "--app", app, name])?;
         Ok(())
     }
 }

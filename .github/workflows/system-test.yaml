@@ -80,7 +80,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get -y install gcc libssl-dev make
+          sudo apt-get -y install gcc libssl-dev make httpie xvfb
 
       - run: env | sort
 
@@ -150,7 +150,7 @@ jobs:
 
       - name: Run tests
         run: |
-          make CLUSTER=kind HEADLESS=true
+          xvfb-run --auto-servernum make CLUSTER=kind
 
       - name: Collect logs
         if: failure()
@@ -165,6 +165,13 @@ jobs:
         with:
           name: logs
           path: logs
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: screenshots
+          path: screenshots
 
   destroy-runner:
     name: Destroy runner

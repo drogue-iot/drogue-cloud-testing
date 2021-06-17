@@ -1,7 +1,9 @@
 use anyhow::Context;
 use fantoccini::{Client, ClientBuilder};
 use serde_json::{json, Map};
+use std::fs::{create_dir_all, write};
 use std::ops::{Deref, DerefMut};
+use std::path::Path;
 
 #[derive(Clone, Debug)]
 pub struct WebDriver {
@@ -34,6 +36,21 @@ impl WebDriver {
                 .await
                 .context("Failed to connect to web driver")?,
         })
+    }
+
+    pub async fn screenshot<S: AsRef<str>>(&mut self, name: S) -> anyhow::Result<()> {
+        let data = self.client.screenshot().await?;
+
+        let name = format!("screenshots/{}.png", name.as_ref());
+        let name = Path::new(&name);
+
+        if let Some(parent) = name.parent() {
+            create_dir_all(parent);
+        }
+
+        write(&name, &data);
+
+        Ok(())
     }
 }
 
@@ -70,6 +87,8 @@ mod test {
         sleep(Duration::from_millis(1000)).await;
 
         let current_url = web.current_url().await.expect("Failed to get current URL");
+
+        web.screenshot("test_web_test/1").await.ok();
 
         assert_eq!("https://blog.drogue.io/", current_url.as_ref());
     }
