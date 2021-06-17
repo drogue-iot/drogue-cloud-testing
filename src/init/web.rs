@@ -45,10 +45,10 @@ impl WebDriver {
         let name = Path::new(&name);
 
         if let Some(parent) = name.parent() {
-            create_dir_all(parent);
+            create_dir_all(parent)?;
         }
 
-        write(&name, &data);
+        write(&name, &data)?;
 
         Ok(())
     }
