@@ -137,7 +137,7 @@ jobs:
           test -x ./scripts/drgadm
 
       - name: Create Kind cluster
-        if: ${{ github.event.inputs.cluster == "kind" }}
+        if: ${{ github.event.inputs.cluster == 'kind' }}
         uses: helm/kind-action@v1.1.0
         with:
           wait: 300s
@@ -145,7 +145,7 @@ jobs:
           config: kind/cluster-config.yaml
 
       - name: Create Minikube cluster
-        if: ${{ github.event.inputs.cluster == "minikube" }}
+        if: ${{ github.event.inputs.cluster == 'minikube' }}
         uses: opsgang/ga-setup-minikube@v0.1.1
         with:
           minikube-version: 1.18.1
