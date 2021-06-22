@@ -28,6 +28,10 @@ impl<'a> Device<'a> {
     pub fn mark_deleted(&mut self) {
         self.deleted = true;
     }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 impl<'a> Drop for Device<'a> {

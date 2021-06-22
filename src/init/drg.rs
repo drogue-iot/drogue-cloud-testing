@@ -1,5 +1,6 @@
+use crate::init::config::Config;
 use crate::init::web::WebDriver;
-use anyhow::bail;
+use anyhow::{bail, Context};
 use fantoccini::Locator;
 use serde_json::Value;
 use std::io::Write;
@@ -19,25 +20,29 @@ impl Drg {
     }
 
     pub async fn auto_login(c: &mut WebDriver) -> anyhow::Result<Self> {
-        let console_url = std::env::var("CONSOLE_URL").expect("Missing 'CONSOLE_URL' variable");
-        let url = std::env::var("API_URL").expect("Missing 'API_URL' variable");
+        log::debug!("auto login");
+
+        let config = Config::new()?;
 
         // get endpoints
 
         let endpoints: serde_json::Value =
-            reqwest::get(format!("{}/.well-known/drogue-endpoints", url))
-                .await?
+            reqwest::get(format!("{}.well-known/drogue-endpoints", config.api))
+                .await
+                .context("Failed to fetch endpoints")?
                 .json()
-                .await?;
+                .await
+                .context("Failed to parse endpoints")?;
         log::info!("Endpoints: {:#?}", endpoints);
+
+        let console = endpoints["console"]
+            .as_str()
+            .expect("Missing console endpoint");
 
         // get access token
 
-        let user = std::env::var("TEST_USER").expect("Missing 'TEST_USER' variable");
-        let password = std::env::var("TEST_PASSWORD").expect("Missing 'TEST_PASSWORD' variable");
-
         // go to the login page
-        c.goto(&console_url).await?;
+        c.goto(console).await?;
 
         sleep(Duration::from_secs(2));
 
@@ -47,9 +52,9 @@ impl Drg {
             .await?;
 
         let mut form = c.form(Locator::Id("kc-form-login")).await?;
-        form.set_by_name("username", &user)
+        form.set_by_name("username", &config.user)
             .await?
-            .set_by_name("password", &password)
+            .set_by_name("password", &config.password)
             .await?
             .submit()
             .await?;
@@ -57,7 +62,7 @@ impl Drg {
         sleep(Duration::from_secs(2));
 
         // go to the token page
-        c.goto(&format!("{}/token", console_url)).await?;
+        c.goto(&format!("{}/token", console)).await?;
 
         sleep(Duration::from_secs(2));
 
@@ -74,7 +79,7 @@ impl Drg {
 
         let drg = Self::new();
         drg.delete_context().ok();
-        drg.login(url, &refresh_token)?;
+        drg.login(config.api.to_string(), &refresh_token)?;
 
         // return result
 
@@ -160,13 +165,20 @@ impl Drg {
     }
 
     pub fn create_device(&self, app: &str, name: &str, spec: &Value) -> anyhow::Result<()> {
-        let input = match spec {
-            Value::Object(_) => Some(serde_json::to_vec(spec)?),
+        let mut args = vec!["create", "device", "--app", app, name];
+
+        let spec = match spec {
+            Value::Object(_) => Some(serde_json::to_string(spec)?),
             Value::Null => None,
             _ => anyhow::bail!("Invalid device spec, but be null or object"),
         };
 
-        self.run_with_input(&["create", "device", "--app", app, name], input)?;
+        if let Some(spec) = &spec {
+            args.push("--spec");
+            args.push(&spec);
+        }
+
+        self.run(&args)?;
         Ok(())
     }
 

@@ -71,6 +71,8 @@ impl DerefMut for WebDriver {
 #[cfg(test)]
 mod test {
     use crate::context::TestContext;
+    // use fantoccini::wait::CanWait;
+    use fantoccini::Locator;
     use std::time::Duration;
     use test_context::test_context;
     use tokio::time::sleep;
@@ -84,13 +86,39 @@ mod test {
             .await
             .expect("Must navigate to our homepage");
 
-        sleep(Duration::from_millis(1000)).await;
+        sleep(Duration::from_millis(2000)).await;
+
+        /*
+        web.wait()
+            .until(Duration::from_secs(5))
+            .every(Duration::from_millis(250))
+            .on_predicate(|client| {
+                Box::pin(async move {
+                    let current = client.current_url().await?;
+                    Ok(current.as_str() == "https://blog.drogue.io/")
+                })
+            })
+            .await
+            .unwrap();
+         */
 
         let current_url = web.current_url().await.expect("Failed to get current URL");
 
         web.screenshot("test_web_test/1").await.ok();
 
         assert_eq!("https://blog.drogue.io/", current_url.as_ref());
+
+        /*
+        let mut element = web
+            .wait()
+            .until(Duration::from_secs(5))
+            .every(Duration::from_millis(250))
+            .on_element(Locator::Css(".hero"))
+            .await
+            .unwrap();
+
+        assert_eq!(element.text().await.unwrap(), "");
+        */
     }
 
     #[test_context(TestContext)]
