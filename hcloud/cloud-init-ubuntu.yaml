@@ -85,12 +85,16 @@ packages:
   - firefox
   - curl
   - unzip
+  - qemu-kvm
+  - libvirt-daemon-system
+  - libvirt-clients
+  - bridge-utils
   - docker-ce
   - jq
 
 users:
   - name: builder
-    groups: wheel,docker
+    groups: wheel,docker,libvirt,kvm
     primary_group: builder
     sudo: ALL=(ALL) NOPASSWD:ALL
 
