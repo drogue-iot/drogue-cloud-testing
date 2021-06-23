@@ -9,6 +9,7 @@ packages:
   - zlib
   - libicu
   - glibc-devel
+  - cmake
   - firefox
   - curl
   - unzip
