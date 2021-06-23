@@ -144,12 +144,19 @@ jobs:
           cluster_name: kind
           config: kind/cluster-config.yaml
 
-      - name: Create Minikube cluster
+      - name: Install Minikube
         if: ${{ github.event.inputs.cluster == 'minikube' }}
         uses: opsgang/ga-setup-minikube@v0.1.1
         with:
           minikube-version: 1.18.1
           k8s-version: 1.20.2
+
+      - name: Create Minikube cluster
+        if: ${{ github.event.inputs.cluster == 'minikube' }}
+        run: |
+          # the "start" call should align with what we have in the defaults
+          minikube start --cpus 4 --memory 14336 --disk-size 20gb --addons ingress
+          sudo minikube tunnel &
 
       - name: Deploy Drogue
         env:
@@ -162,7 +169,7 @@ jobs:
 
       - name: Run tests
         run: |
-          xvfb-run --auto-servernum make CLUSTER=kind
+          xvfb-run --auto-servernum make CLUSTER=${{ github.event.inputs.cluster }}
 
       - name: Collect logs
         if: failure()
