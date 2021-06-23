@@ -7,15 +7,20 @@ use crate::{
     },
     {context::TestContext, resources::apps::Application},
 };
+use maplit::{convert_args, hashmap};
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::time::Duration;
 use test_context::test_context;
+use uuid::Uuid;
 
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_send_telemetry_pass(ctx: &mut TestContext) -> anyhow::Result<()> {
+    let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
         ctx,
+        app.clone(),
         "device1",
         json!({
             "credentials": {
@@ -24,7 +29,8 @@ async fn test_send_telemetry_pass(ctx: &mut TestContext) -> anyhow::Result<()> {
                 ]
             }
         }),
-        Auth::Password("foo"),
+        Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
+        Default::default(),
     )
     .await
 }
@@ -32,8 +38,57 @@ async fn test_send_telemetry_pass(ctx: &mut TestContext) -> anyhow::Result<()> {
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_send_telemetry_user(ctx: &mut TestContext) -> anyhow::Result<()> {
+    let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
         ctx,
+        app.clone(),
+        "device1",
+        json!({
+            "credentials": {
+                "credentials": [
+                    { "user": {"username": "foo", "password": "bar" } }
+                ]
+            }
+        }),
+        Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
+        convert_args!(hashmap! (
+            "device" => "device1",
+        )),
+    )
+    .await
+}
+
+#[test_context(TestContext)]
+#[tokio::test]
+async fn test_send_telemetry_user_only(ctx: &mut TestContext) -> anyhow::Result<()> {
+    let app = Uuid::new_v4().to_string();
+    test_single_mqtt_message(
+        ctx,
+        app.clone(),
+        "device1",
+        json!({
+            "credentials": {
+                "credentials": [
+                    { "user": {"username": "foo", "password": "bar" } }
+                ]
+            }
+        }),
+        Auth::UsernamePassword("foo".into(), "bar".into()),
+        convert_args!(hashmap! (
+            "application" => app,
+            "device" => "device1",
+        )),
+    )
+    .await
+}
+
+#[test_context(TestContext)]
+#[tokio::test]
+async fn test_send_telemetry_user_alias(ctx: &mut TestContext) -> anyhow::Result<()> {
+    let app = Uuid::new_v4().to_string();
+    test_single_mqtt_message(
+        ctx,
+        app.clone(),
         "device1",
         json!({
             "credentials": {
@@ -42,21 +97,27 @@ async fn test_send_telemetry_user(ctx: &mut TestContext) -> anyhow::Result<()> {
                 ]
             }
         }),
-        Auth::UsernamePassword("foo", "bar"),
+        Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
+        Default::default(),
     )
     .await
 }
 
-async fn test_single_mqtt_message(
+async fn test_single_mqtt_message<S>(
     ctx: &mut TestContext,
+    app_name: S,
     device_name: &str,
     spec: Value,
-    auth: Auth<'_>,
-) -> anyhow::Result<()> {
+    auth: Auth,
+    params: HashMap<String, String>,
+) -> anyhow::Result<()>
+where
+    S: Into<String>,
+{
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
 
-    let app = Application::new_random(drg.clone()).expect("Create a new application");
+    let app = Application::new(drg.clone(), app_name).expect("Create a new application");
     let device = app
         .create_device(device_name, &spec)
         .expect("Create new device");
@@ -88,7 +149,7 @@ async fn test_single_mqtt_message(
     log::info!("Sending payload");
 
     let response = HttpSender::new(&info)?
-        .send(&device, auth, "telemetry")
+        .send(&device, auth, "telemetry", params)
         .await
         .expect("HTTP call to succeed");
 
