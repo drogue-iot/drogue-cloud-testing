@@ -32,6 +32,10 @@ impl<'a> Device<'a> {
     pub fn name(&self) -> &str {
         &self.name
     }
+
+    pub fn app(&self) -> &'a Application {
+        self.app
+    }
 }
 
 impl<'a> Drop for Device<'a> {
