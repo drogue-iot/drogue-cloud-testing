@@ -125,7 +125,7 @@ jobs:
       - name: Install Minikube
         if: ${{ github.event.inputs.cluster == 'minikube' }}
         run: |
-          sudo apt-get install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+          sudo apt-get -y install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
           sudo adduser $(id -un) libvirt
           sudo adduser $(id -un) kvm
 
