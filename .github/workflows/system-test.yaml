@@ -128,6 +128,10 @@ jobs:
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/bin/minikube
 
+      - name: Install cargo2junit
+        run: |
+          cargo install cargo2junit
+
       - name: Download release
         run: |
           mkdir release
@@ -169,7 +173,15 @@ jobs:
 
       - name: Run tests
         run: |
-          xvfb-run --auto-servernum make CLUSTER=${{ github.event.inputs.cluster }}
+          xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json" CLUSTER=${{ github.event.inputs.cluster }} | cargo2junit > results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          check_name: Test Results
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: results.xml
 
       - name: Collect logs
         if: failure()

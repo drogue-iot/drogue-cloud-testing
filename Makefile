@@ -1,4 +1,4 @@
-all: test
+all: info test
 
 export SHELL:=bash
 
@@ -27,10 +27,10 @@ info:
 	@echo NS: $(DROGUE_NS)
 
 .PHONY: start
-start: info
+start:
 	-drg context delete system-tests
 	-pkill geckodriver
-	geckodriver &
+	geckodriver &>/dev/null &
 
 .PHONY: stop
 stop:
@@ -48,4 +48,4 @@ test-run:
 		RUST_LOG=$(RUST_LOG) \
 		TEST_USER=admin \
  		TEST_PASSWORD=admin123456 \
-		cargo test -- --test-threads=1 $(TESTS)
+		cargo test -- --test-threads=1 $(TEST_ARGS) $(TESTS)
