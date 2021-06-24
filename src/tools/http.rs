@@ -1,12 +1,18 @@
 use crate::init::info::Information;
-use crate::resources::devices::Device;
 use std::collections::HashMap;
 use url::Url;
 
+#[derive(Clone, Debug)]
 pub enum Auth {
     None,
     UsernamePassword(String, String),
     X509Certificate(Vec<u8>),
+}
+
+impl Default for Auth {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -23,14 +29,12 @@ impl HttpSender {
 
     pub async fn send(
         &self,
-        device: &Device<'_>,
+        channel: String,
         auth: Auth,
-        channel: &str,
+        content_type: String,
         params: HashMap<String, String>,
+        payload: Option<Vec<u8>>,
     ) -> anyhow::Result<reqwest::Response> {
-        let app = device.app().name().to_string();
-        let device = device.name().to_string();
-
         let client = reqwest::ClientBuilder::new().danger_accept_invalid_certs(true);
 
         let client = match &auth {
@@ -52,13 +56,19 @@ impl HttpSender {
 
         let request = client.post(url);
 
-        let request = match &auth {
+        let mut request = match &auth {
             Auth::None => request,
             Auth::UsernamePassword(username, password) => {
                 request.basic_auth(username, Some(password))
             }
             Auth::X509Certificate(_) => request,
         };
+
+        request = request.header(reqwest::header::CONTENT_TYPE, content_type);
+
+        if let Some(payload) = payload {
+            request = request.body(payload);
+        }
 
         Ok(request.send().await.expect("HTTP call to succeed"))
     }

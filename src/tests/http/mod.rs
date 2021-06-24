@@ -8,118 +8,162 @@ use crate::{
     {context::TestContext, resources::apps::Application},
 };
 use maplit::{convert_args, hashmap};
+use rstest::{fixture, rstest};
+use rstest_reuse::{self, *};
 use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::time::Duration;
-use test_context::test_context;
+use std::{collections::HashMap, time::Duration};
 use uuid::Uuid;
 
-#[test_context(TestContext)]
-#[tokio::test]
-async fn test_send_telemetry_pass(ctx: &mut TestContext) -> anyhow::Result<()> {
+#[fixture]
+fn ctx() -> TestContext {
+    TestContext::new()
+}
+
+#[template]
+#[rstest(
+    version,
+    case::mqtt3(MqttVersion::V3_1_1),
+    case::mqtt5_structured(MqttVersion::V5(false)),
+    case::mqtt5_binary(MqttVersion::V5(true))
+)]
+fn mqtt_versions(version: MqttVersion) {}
+
+#[apply(mqtt_versions)]
+#[rstest]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_send_telemetry_pass(
+    mut ctx: TestContext,
+    version: MqttVersion,
+) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
-        ctx,
-        app.clone(),
-        "device1",
-        json!({
-            "credentials": {
-                "credentials": [
-                    { "pass": "foo" }
-                ]
-            }
-        }),
-        Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
-        Default::default(),
+        &mut ctx,
+        version,
+        TestData {
+            app: app.clone(),
+            device: "device1".into(),
+            spec: json!({"credentials": {"credentials": [
+                { "pass": "foo" }
+            ]}}),
+            auth: Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
+            params: Default::default(),
+            ..Default::default()
+        },
     )
     .await
 }
 
-#[test_context(TestContext)]
-#[tokio::test]
-async fn test_send_telemetry_user(ctx: &mut TestContext) -> anyhow::Result<()> {
+#[apply(mqtt_versions)]
+#[rstest]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_send_telemetry_user(
+    mut ctx: TestContext,
+    version: MqttVersion,
+) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
-        ctx,
-        app.clone(),
-        "device1",
-        json!({
-            "credentials": {
-                "credentials": [
-                    { "user": {"username": "foo", "password": "bar" } }
-                ]
-            }
-        }),
-        Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
-        convert_args!(hashmap! (
-            "device" => "device1",
-        )),
+        &mut ctx,
+        version,
+        TestData {
+            app: app.clone(),
+            device: "device1".into(),
+            spec: json!({"credentials": {"credentials": [
+                { "user": { "username": "foo", "password": "bar" } }
+            ]}}),
+            auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
+            params: convert_args!(hashmap! (
+                "device" => "device1",
+            )),
+            ..Default::default()
+        },
     )
     .await
 }
 
-#[test_context(TestContext)]
-#[tokio::test]
-async fn test_send_telemetry_user_only(ctx: &mut TestContext) -> anyhow::Result<()> {
+#[apply(mqtt_versions)]
+#[rstest]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_send_telemetry_user_only(
+    mut ctx: TestContext,
+    version: MqttVersion,
+) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
-        ctx,
-        app.clone(),
-        "device1",
-        json!({
-            "credentials": {
-                "credentials": [
-                    { "user": {"username": "foo", "password": "bar" } }
-                ]
-            }
-        }),
-        Auth::UsernamePassword("foo".into(), "bar".into()),
-        convert_args!(hashmap! (
-            "application" => app,
-            "device" => "device1",
-        )),
+        &mut ctx,
+        version,
+        TestData {
+            app: app.clone(),
+            device: "device1".into(),
+            spec: json!({"credentials": { "credentials": [
+                { "user": {"username": "foo", "password": "bar" } }
+            ]}}),
+            auth: Auth::UsernamePassword("foo".into(), "bar".into()),
+            params: convert_args!(hashmap! (
+                "application" => app,
+                "device" => "device1",
+            )),
+            ..Default::default()
+        },
     )
     .await
 }
 
-#[test_context(TestContext)]
-#[tokio::test]
-async fn test_send_telemetry_user_alias(ctx: &mut TestContext) -> anyhow::Result<()> {
+#[apply(mqtt_versions)]
+#[rstest]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn test_send_telemetry_user_alias(
+    mut ctx: TestContext,
+    version: MqttVersion,
+) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
-        ctx,
-        app.clone(),
-        "device1",
-        json!({
-            "credentials": {
-                "credentials": [
-                    { "user": {"username": "foo", "password": "bar", "unique": true } }
-                ]
-            }
-        }),
-        Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
-        Default::default(),
+        &mut ctx,
+        version,
+        TestData {
+            app: app.clone(),
+            device: "device1".into(),
+            spec: json!({"credentials": { "credentials": [
+                { "user": {"username": "foo", "password": "bar", "unique": true } }
+            ]}}),
+            auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
+            ..Default::default()
+        },
     )
     .await
 }
 
-async fn test_single_mqtt_message<S>(
-    ctx: &mut TestContext,
-    app_name: S,
-    device_name: &str,
+#[derive(Clone, Debug, Default)]
+pub struct TestData {
+    app: String,
+    device: String,
     spec: Value,
     auth: Auth,
     params: HashMap<String, String>,
-) -> anyhow::Result<()>
-where
-    S: Into<String>,
-{
+    payload: Option<Vec<u8>>,
+    content_type: Option<String>,
+    channel: Option<String>,
+}
+
+impl TestData {
+    pub fn channel(&self) -> String {
+        self.channel
+            .as_ref()
+            .map_or_else(|| "telemetry".into(), |s| s.into())
+    }
+}
+
+async fn test_single_mqtt_message(
+    ctx: &mut TestContext,
+    version: MqttVersion,
+    data: TestData,
+) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
 
-    let app = Application::new(drg.clone(), app_name).expect("Create a new application");
+    let channel = data.channel();
+    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
     let device = app
-        .create_device(device_name, &spec)
+        .create_device(data.device, &data.spec)
         .expect("Create new device");
 
     let uri = format!(
@@ -133,7 +177,7 @@ where
         uri,
         None,
         Some(drg.current_token().await?),
-        MqttVersion::V3_1_1,
+        version,
         format!("app/{}", app.name()),
         MqttQoS::QoS0,
     )
@@ -142,6 +186,8 @@ where
 
     log::info!("Receiver created");
 
+    // FIXME: instead of just sleeping, we should try to warm up the channel with different events
+
     tokio::time::sleep(Duration::from_secs(5)).await;
 
     // do some work
@@ -149,7 +195,13 @@ where
     log::info!("Sending payload");
 
     let response = HttpSender::new(&info)?
-        .send(&device, auth, "telemetry", params)
+        .send(
+            channel,
+            data.auth,
+            "application/octet-stream".into(),
+            data.params,
+            data.payload,
+        )
         .await
         .expect("HTTP call to succeed");
 
@@ -174,8 +226,9 @@ where
             r#type: "io.drogue.event.v1".into(),
             instance: "drogue".into(),
             app: app.name().into(),
-            device: device_name.to_string(),
+            device: device.name().into(),
             content_type: Some("application/octet-stream".into()),
+            payload: vec![],
         }],
     );
 

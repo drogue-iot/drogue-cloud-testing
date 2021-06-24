@@ -1,11 +1,11 @@
+use crate::tools::assert::Message;
 use anyhow::Context;
 use futures::StreamExt;
-use std::collections::HashMap;
-use std::iter::FromIterator;
-use std::time::Instant;
+use serde_json::Value;
 use std::{
-    sync::{Arc, RwLock},
-    time::Duration,
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -13,7 +13,16 @@ use uuid::Uuid;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MqttVersion {
     V3_1_1,
-    V5,
+    V5(bool),
+}
+
+impl MqttVersion {
+    pub fn is_binary(&self) -> bool {
+        match self {
+            Self::V5(binary) => *binary,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -27,11 +36,78 @@ pub enum MqttQoS {
 pub struct MqttMessage {
     pub topic: String,
     pub user_properties: HashMap<String, String>,
+    pub content_type: Option<String>,
     pub payload: Vec<u8>,
 }
 
+impl MqttMessage {
+    pub fn into_message(self, binary: bool) -> anyhow::Result<Message> {
+        match binary {
+            true => self.into_message_binary(),
+            false => self.into_message_structured(),
+        }
+    }
+
+    pub fn into_message_structured(self) -> anyhow::Result<Message> {
+        if let Some(content_type) = self.content_type {
+            if content_type.as_str() != "application/cloudevents+json; charset=utf-8" {
+                anyhow::bail!("Wrong content type: {}", content_type);
+            }
+        }
+
+        let json: Value = serde_json::from_slice(&self.payload).context("Parse as JSON")?;
+
+        let payload = match json["data_base64"].as_str() {
+            Some(data) => base64::decode(data)?,
+            None => vec![],
+        };
+
+        Ok(Message {
+            subject: json["subject"].as_str().unwrap_or_default().into(),
+            r#type: json["type"].as_str().unwrap_or_default().into(),
+            instance: json["instance"].as_str().unwrap_or_default().into(),
+            app: json["application"].as_str().unwrap_or_default().into(),
+            device: json["device"].as_str().unwrap_or_default().into(),
+            content_type: json["datacontenttype"].as_str().map(|s| s.into()),
+            payload,
+        })
+    }
+
+    pub fn into_message_binary(self) -> anyhow::Result<Message> {
+        Ok(Message {
+            subject: self
+                .user_properties
+                .get("subject")
+                .map(Into::into)
+                .unwrap_or_default(),
+            r#type: self
+                .user_properties
+                .get("type")
+                .map(Into::into)
+                .unwrap_or_default(),
+            instance: self
+                .user_properties
+                .get("instance")
+                .map(Into::into)
+                .unwrap_or_default(),
+            app: self
+                .user_properties
+                .get("application")
+                .map(Into::into)
+                .unwrap_or_default(),
+            device: self
+                .user_properties
+                .get("device")
+                .map(Into::into)
+                .unwrap_or_default(),
+            content_type: self.content_type,
+            payload: self.payload,
+        })
+    }
+}
+
 pub struct MqttReceiver {
-    messages: Arc<RwLock<Vec<MqttMessage>>>,
+    messages: Arc<Mutex<Vec<anyhow::Result<Message>>>>,
     _client: paho_mqtt::AsyncClient,
     _ctx: JoinHandle<()>,
 }
@@ -54,11 +130,15 @@ impl MqttReceiver {
         let create_opts = paho_mqtt::CreateOptionsBuilder::new()
             .server_uri(uri)
             .client_id(client_id)
-            .persistence(paho_mqtt::PersistenceType::None)
-            .finalize();
+            .persistence(paho_mqtt::PersistenceType::None);
 
-        let mut client =
-            paho_mqtt::AsyncClient::new(create_opts).context("Failed to create client")?;
+        let create_opts = match version {
+            MqttVersion::V3_1_1 => create_opts.mqtt_version(paho_mqtt::MQTT_VERSION_3_1_1),
+            MqttVersion::V5(_) => create_opts.mqtt_version(paho_mqtt::MQTT_VERSION_5),
+        };
+
+        let mut client = paho_mqtt::AsyncClient::new(create_opts.finalize())
+            .context("Failed to create client")?;
 
         let ssl_opts = paho_mqtt::SslOptionsBuilder::new()
             .enable_server_cert_auth(false)
@@ -74,13 +154,20 @@ impl MqttReceiver {
             conn_opts.password(password);
         };
 
-        conn_opts
-            .keep_alive_interval(Duration::from_secs(30))
-            .mqtt_version(match version {
-                MqttVersion::V3_1_1 => paho_mqtt::MQTT_VERSION_3_1_1,
-                MqttVersion::V5 => paho_mqtt::MQTT_VERSION_5,
-            })
-            .clean_session(true);
+        conn_opts.keep_alive_interval(Duration::from_secs(30));
+
+        match version {
+            MqttVersion::V3_1_1 => {
+                conn_opts
+                    .mqtt_version(paho_mqtt::MQTT_VERSION_3_1_1)
+                    .clean_session(true);
+            }
+            MqttVersion::V5(_) => {
+                conn_opts
+                    .mqtt_version(paho_mqtt::MQTT_VERSION_5)
+                    .clean_start(true);
+            }
+        }
 
         let mut strm = client.get_stream(100);
 
@@ -89,31 +176,57 @@ impl MqttReceiver {
             .await
             .context("Failed to connect")?;
 
-        client
-            .subscribe(
-                topic,
-                match qos {
-                    MqttQoS::QoS0 => 0,
-                    MqttQoS::QoS1 => 1,
-                    MqttQoS::QoS2 => 2,
-                },
-            )
-            .await
-            .context("Failed to subscribe")?;
+        let qos = match qos {
+            MqttQoS::QoS0 => 0,
+            MqttQoS::QoS1 => 1,
+            MqttQoS::QoS2 => 2,
+        };
 
-        let messages = Arc::new(RwLock::new(Vec::new()));
+        match version {
+            MqttVersion::V5(true) => {
+                let mut props = paho_mqtt::Properties::new();
+                props.push_string_pair(
+                    paho_mqtt::PropertyCode::UserProperty,
+                    "content-mode",
+                    "binary",
+                )?;
+                client
+                    .subscribe_with_options(topic, qos, false, Some(props))
+                    .await
+                    .context("Failed to subscribe")?;
+            }
+            _ => {
+                client
+                    .subscribe(topic, qos)
+                    .await
+                    .context("Failed to subscribe")?;
+            }
+        }
+
+        let messages = Arc::new(Mutex::new(Vec::new()));
         let strm_messages = messages.clone();
+
+        let binary = version.is_binary();
 
         let ctx = tokio::spawn(async move {
             log::info!("Starting message stream...");
             // we don't reconnect
             while let Some(Some(ref msg)) = strm.next().await {
-                if let Ok(mut msgs) = strm_messages.write() {
-                    msgs.push(MqttMessage {
+                if let Ok(mut msgs) = strm_messages.lock() {
+                    log::info!("Raw message: {:#?}", msg);
+
+                    let msg = MqttMessage {
                         topic: msg.topic().into(),
-                        user_properties: HashMap::from_iter(msg.properties().user_iter()),
+                        user_properties: msg.properties().user_iter().collect::<HashMap<_, _>>(),
+                        content_type: msg
+                            .properties()
+                            .get_string(paho_mqtt::PropertyCode::ContentType),
                         payload: msg.payload().into(),
-                    });
+                    };
+
+                    log::info!("Received: {:#?}", msg);
+
+                    msgs.push(msg.into_message(binary));
                 }
             }
         });
@@ -126,7 +239,7 @@ impl MqttReceiver {
     }
 
     fn num_messages(&self) -> usize {
-        self.messages.read().map_or(0, |m| m.len())
+        self.messages.lock().map_or(0, |m| m.len())
     }
 
     pub async fn wait_for_messages(&self, num: usize, timeout: Duration) -> Result<(), ()> {
@@ -140,9 +253,9 @@ impl MqttReceiver {
         Ok(())
     }
 
-    pub fn close(self) -> Vec<MqttMessage> {
-        if let Ok(msgs) = self.messages.read() {
-            msgs.clone()
+    pub fn close(self) -> Vec<anyhow::Result<Message>> {
+        if let Ok(mut msgs) = self.messages.lock() {
+            msgs.drain(..).collect()
         } else {
             log::warn!("Unable to get messages");
             vec![]
