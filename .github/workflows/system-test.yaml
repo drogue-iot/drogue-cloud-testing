@@ -183,6 +183,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: results.xml
 
+      - name: Upload raw test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: junit
+          path: results.xml
+
       - name: Collect logs
         if: failure()
         run: |
