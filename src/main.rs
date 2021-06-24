@@ -11,7 +11,4 @@ mod tests;
 #[cfg(test)]
 mod tools;
 
-#[cfg(test)]
-use rstest_reuse;
-
 fn main() {}

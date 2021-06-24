@@ -2,16 +2,14 @@ use crate::{
     init::token::TokenProvider,
     tools::{
         assert::{assert_msgs, Message},
-        http::HttpSender,
-        mqtt::{MqttQoS, MqttReceiver, MqttVersion},
+        mqtt::{MqttQoS, MqttReceiver, MqttSender, MqttVersion},
         Auth,
     },
     {context::TestContext, resources::apps::Application},
 };
-use maplit::{convert_args, hashmap};
 use rstest::{fixture, rstest};
 use serde_json::{json, Value};
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 use uuid::Uuid;
 
 #[fixture]
@@ -25,12 +23,16 @@ async fn test_send_telemetry_pass(
     mut ctx: TestContext,
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(false))]
-    version: MqttVersion,
+    endpoint_version: MqttVersion,
+    #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(false))]
+    integration_version: MqttVersion,
 ) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_mqtt_message(
         &mut ctx,
-        version,
+        MqttQoS::QoS0,
+        endpoint_version,
+        integration_version,
         TestData {
             app: app.clone(),
             device: "device1".into(),
@@ -38,89 +40,6 @@ async fn test_send_telemetry_pass(
                 { "pass": "foo" }
             ]}}),
             auth: Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
-            params: Default::default(),
-            ..Default::default()
-        },
-    )
-    .await
-}
-
-#[rstest]
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_user(
-    mut ctx: TestContext,
-    #[rustfmt::skip]
-    #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(false))]
-    version: MqttVersion,
-) -> anyhow::Result<()> {
-    let app = Uuid::new_v4().to_string();
-    test_single_mqtt_message(
-        &mut ctx,
-        version,
-        TestData {
-            app: app.clone(),
-            device: "device1".into(),
-            spec: json!({"credentials": {"credentials": [
-                { "user": { "username": "foo", "password": "bar" } }
-            ]}}),
-            auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
-            params: convert_args!(hashmap! (
-                "device" => "device1",
-            )),
-            ..Default::default()
-        },
-    )
-    .await
-}
-
-#[rstest]
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_user_only(
-    mut ctx: TestContext,
-    #[rustfmt::skip]
-    #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(false))]
-    version: MqttVersion,
-) -> anyhow::Result<()> {
-    let app = Uuid::new_v4().to_string();
-    test_single_mqtt_message(
-        &mut ctx,
-        version,
-        TestData {
-            app: app.clone(),
-            device: "device1".into(),
-            spec: json!({"credentials": { "credentials": [
-                { "user": {"username": "foo", "password": "bar" } }
-            ]}}),
-            auth: Auth::UsernamePassword("foo".into(), "bar".into()),
-            params: convert_args!(hashmap! (
-                "application" => app,
-                "device" => "device1",
-            )),
-            ..Default::default()
-        },
-    )
-    .await
-}
-
-#[rstest]
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_user_alias(
-    mut ctx: TestContext,
-    #[rustfmt::skip]
-    #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(false))]
-    version: MqttVersion,
-) -> anyhow::Result<()> {
-    let app = Uuid::new_v4().to_string();
-    test_single_mqtt_message(
-        &mut ctx,
-        version,
-        TestData {
-            app: app.clone(),
-            device: "device1".into(),
-            spec: json!({"credentials": { "credentials": [
-                { "user": {"username": "foo", "password": "bar", "unique": true } }
-            ]}}),
-            auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
             ..Default::default()
         },
     )
@@ -133,7 +52,6 @@ pub struct TestData {
     device: String,
     spec: Value,
     auth: Auth,
-    params: HashMap<String, String>,
     payload: Option<Vec<u8>>,
     content_type: Option<String>,
     channel: Option<String>,
@@ -147,7 +65,9 @@ impl TestData {
 
 async fn test_single_mqtt_message(
     ctx: &mut TestContext,
-    version: MqttVersion,
+    qos: MqttQoS,
+    endpoint_version: MqttVersion,
+    integration_version: MqttVersion,
     data: TestData,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
@@ -170,7 +90,7 @@ async fn test_single_mqtt_message(
         uri,
         None,
         Some(drg.current_token().await?),
-        version,
+        integration_version,
         format!("app/{}", app.name()),
         MqttQoS::QoS0,
     )
@@ -187,18 +107,16 @@ async fn test_single_mqtt_message(
 
     log::info!("Sending payload");
 
-    let response = HttpSender::new(&info)?
+    MqttSender::new(&info, data.auth, endpoint_version)
+        .await?
         .send(
             channel,
-            data.auth,
+            qos,
             "application/octet-stream".into(),
-            data.params,
             data.payload,
         )
         .await
-        .expect("HTTP call to succeed");
-
-    assert!(response.status().is_success());
+        .expect("MQTT publish to succeed");
 
     log::info!("Payload sent, waiting for messages");
 

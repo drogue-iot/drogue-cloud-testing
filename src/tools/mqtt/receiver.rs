@@ -1,3 +1,4 @@
+use super::*;
 use crate::tools::assert::Message;
 use anyhow::Context;
 use futures::StreamExt;
@@ -9,28 +10,6 @@ use std::{
 };
 use tokio::task::JoinHandle;
 use uuid::Uuid;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MqttVersion {
-    V3_1_1,
-    V5(bool),
-}
-
-impl MqttVersion {
-    pub fn is_binary(&self) -> bool {
-        match self {
-            Self::V5(binary) => *binary,
-            _ => false,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MqttQoS {
-    QoS0,
-    QoS1,
-    QoS2,
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MqttMessage {
@@ -154,20 +133,11 @@ impl MqttReceiver {
             conn_opts.password(password);
         };
 
-        conn_opts.keep_alive_interval(Duration::from_secs(30));
+        conn_opts
+            .keep_alive_interval(Duration::from_secs(30))
+            .automatic_reconnect(Duration::from_millis(100), Duration::from_secs(5));
 
-        match version {
-            MqttVersion::V3_1_1 => {
-                conn_opts
-                    .mqtt_version(paho_mqtt::MQTT_VERSION_3_1_1)
-                    .clean_session(true);
-            }
-            MqttVersion::V5(_) => {
-                conn_opts
-                    .mqtt_version(paho_mqtt::MQTT_VERSION_5)
-                    .clean_start(true);
-            }
-        }
+        version.apply(&mut conn_opts);
 
         let mut strm = client.get_stream(100);
 
@@ -175,12 +145,6 @@ impl MqttReceiver {
             .connect(conn_opts.finalize())
             .await
             .context("Failed to connect")?;
-
-        let qos = match qos {
-            MqttQoS::QoS0 => 0,
-            MqttQoS::QoS1 => 1,
-            MqttQoS::QoS2 => 2,
-        };
 
         match version {
             MqttVersion::V5(true) => {
@@ -191,13 +155,13 @@ impl MqttReceiver {
                     "binary",
                 )?;
                 client
-                    .subscribe_with_options(topic, qos, false, Some(props))
+                    .subscribe_with_options(topic, qos.into(), false, Some(props))
                     .await
                     .context("Failed to subscribe")?;
             }
             _ => {
                 client
-                    .subscribe(topic, qos)
+                    .subscribe(topic, qos.into())
                     .await
                     .context("Failed to subscribe")?;
             }

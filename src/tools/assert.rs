@@ -11,7 +11,7 @@ pub struct Message {
     pub payload: Vec<u8>,
 }
 
-pub fn assert_mqtt_msgs(actual: &Vec<anyhow::Result<Message>>, expected: &Vec<Message>) {
+pub fn assert_msgs(actual: &Vec<anyhow::Result<Message>>, expected: &Vec<Message>) {
     let len = max(actual.len(), expected.len());
 
     for i in 0..len {

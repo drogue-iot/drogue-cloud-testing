@@ -1,19 +1,7 @@
 use crate::init::info::Information;
+use crate::tools::Auth;
 use std::collections::HashMap;
 use url::Url;
-
-#[derive(Clone, Debug)]
-pub enum Auth {
-    None,
-    UsernamePassword(String, String),
-    X509Certificate(Vec<u8>),
-}
-
-impl Default for Auth {
-    fn default() -> Self {
-        Self::None
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct HttpSender {
