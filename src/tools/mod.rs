@@ -1,5 +1,6 @@
 pub mod assert;
 pub mod http;
+pub mod messages;
 pub mod mqtt;
 
 #[derive(Clone, Debug)]

@@ -1,12 +1,13 @@
 use super::*;
 use crate::tools::assert::Message;
+use crate::tools::messages::WaitForMessages;
 use anyhow::Context;
 use futures::StreamExt;
 use serde_json::Value;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Duration,
 };
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -82,6 +83,19 @@ impl MqttMessage {
             content_type: self.content_type,
             payload: self.payload,
         })
+    }
+}
+
+impl From<paho_mqtt::Message> for MqttMessage {
+    fn from(msg: paho_mqtt::Message) -> Self {
+        Self {
+            topic: msg.topic().into(),
+            user_properties: msg.properties().user_iter().collect::<HashMap<_, _>>(),
+            content_type: msg
+                .properties()
+                .get_string(paho_mqtt::PropertyCode::ContentType),
+            payload: msg.payload().into(),
+        }
     }
 }
 
@@ -202,21 +216,6 @@ impl MqttReceiver {
         })
     }
 
-    fn num_messages(&self) -> usize {
-        self.messages.lock().map_or(0, |m| m.len())
-    }
-
-    pub async fn wait_for_messages(&self, num: usize, timeout: Duration) -> Result<(), ()> {
-        let start = Instant::now();
-        while self.num_messages() < num {
-            tokio::time::sleep(Duration::from_millis(250)).await;
-            if start.elapsed() > timeout {
-                return Err(());
-            }
-        }
-        Ok(())
-    }
-
     pub fn close(self) -> Vec<anyhow::Result<Message>> {
         if let Ok(mut msgs) = self.messages.lock() {
             msgs.drain(..).collect()
@@ -224,6 +223,12 @@ impl MqttReceiver {
             log::warn!("Unable to get messages");
             vec![]
         }
+    }
+}
+
+impl WaitForMessages for MqttReceiver {
+    fn num_messages(&self) -> usize {
+        self.messages.lock().map_or(0, |m| m.len())
     }
 }
 

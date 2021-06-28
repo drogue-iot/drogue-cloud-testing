@@ -1,12 +1,23 @@
 use super::*;
-use crate::init::info::Information;
-use crate::tools::Auth;
-use anyhow::Context;
-use std::time::Duration;
+use crate::{
+    init::info::Information,
+    tools::{messages::WaitForMessages, Auth},
+};
+use anyhow::{anyhow, Context};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use uuid::Uuid;
+
+struct MqttMessageDispatcher {
+    receiver_map: HashMap<String, Vec<MqttMessage>>,
+}
 
 pub struct MqttSender {
     client: paho_mqtt::AsyncClient,
+    dispatcher: Arc<Mutex<MqttMessageDispatcher>>,
 }
 
 impl MqttSender {
@@ -25,7 +36,7 @@ impl MqttSender {
             MqttVersion::V5(_) => create_opts.mqtt_version(paho_mqtt::MQTT_VERSION_5),
         };
 
-        let client = paho_mqtt::AsyncClient::new(create_opts.finalize())
+        let mut client = paho_mqtt::AsyncClient::new(create_opts.finalize())
             .context("Failed to create client")?;
 
         let mut ssl_opts = paho_mqtt::SslOptionsBuilder::new();
@@ -50,12 +61,31 @@ impl MqttSender {
 
         version.apply(&mut conn_opts);
 
+        let dispatcher = Arc::new(Mutex::new(MqttMessageDispatcher {
+            receiver_map: HashMap::new(),
+        }));
+
+        let receiver_messages = dispatcher.clone();
+        client.set_message_callback(move |_, msg| {
+            if let Some(msg) = msg {
+                if let Ok(mut messages) = receiver_messages.lock() {
+                    let buffer = messages
+                        .receiver_map
+                        .entry(msg.topic().to_string())
+                        .or_insert_with(std::vec::Vec::new);
+                    let msg = msg.into();
+                    log::info!("Received on device: {:#?}", msg);
+                    buffer.push(msg);
+                }
+            }
+        });
+
         client
             .connect(conn_opts.finalize())
             .await
             .context("Failed to connect")?;
 
-        Ok(Self { client })
+        Ok(Self { client, dispatcher })
     }
 
     pub async fn send(
@@ -75,5 +105,29 @@ impl MqttSender {
             .properties(props);
 
         Ok(self.client.try_publish(msg.finalize())?.await?)
+    }
+
+    /// Subscribe to the command topic
+    pub async fn subscribe_commands(&mut self) -> anyhow::Result<()> {
+        self.client
+            .subscribe("command/inbox/#", MqttQoS::QoS0.into())
+            .await?;
+        Ok(())
+    }
+
+    pub fn fetch_messages(&self) -> anyhow::Result<HashMap<String, Vec<MqttMessage>>> {
+        if let Ok(dispatcher) = self.dispatcher.lock() {
+            Ok(dispatcher.receiver_map.clone())
+        } else {
+            Err(anyhow!("Failed to lock dispatcher"))
+        }
+    }
+}
+
+impl WaitForMessages for MqttSender {
+    fn num_messages(&self) -> usize {
+        self.dispatcher
+            .lock()
+            .map_or(0, |m| m.receiver_map.iter().map(|(_, v)| v.len()).sum())
     }
 }

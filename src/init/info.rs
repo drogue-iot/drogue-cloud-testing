@@ -11,6 +11,7 @@ pub struct Information {
     pub http: UrlInformation,
     pub mqtt: HostPortInformation,
     pub mqtt_integration: HostPortInformation,
+    pub command_url: Url,
 }
 
 #[derive(Clone, Debug, Deserialize)]
