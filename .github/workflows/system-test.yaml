@@ -173,7 +173,7 @@ jobs:
 
       - name: Run tests
         run: |
-          xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json" CLUSTER=${{ github.event.inputs.cluster }} | cargo2junit > results.xml
+          xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json" CLUSTER=${{ github.event.inputs.cluster }} --report-time | cargo2junit > results.xml
 
       - name: Upload test results
         if: always()
