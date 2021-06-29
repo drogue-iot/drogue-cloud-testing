@@ -79,7 +79,7 @@ async fn test_single_http_command(
 
     // start telemetry
 
-    let sender = HttpSender::new(&info)?;
+    let sender = HttpSender::new(&info, ctx);
     let telemetry = sender.send(
         channel,
         auth,

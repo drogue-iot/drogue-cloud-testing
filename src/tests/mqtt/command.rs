@@ -4,6 +4,7 @@ use crate::{
     init::token::TokenInjector,
     tools::{messages::WaitForMessages, mqtt::MqttVersion},
 };
+use anyhow::Context;
 use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::Uuid;
@@ -49,9 +50,7 @@ async fn test_single_mqtt_command(
         .await
         .expect("MQTT publish to succeed");
 
-    let client = reqwest::ClientBuilder::new()
-        .danger_accept_invalid_certs(true)
-        .build()?;
+    let client = ctx.client().await.context("Get HTTP client")?;
 
     let mut command_url = info.command_url;
     command_url.set_path(&format!(

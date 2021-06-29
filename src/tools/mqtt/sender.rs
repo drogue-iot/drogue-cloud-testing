@@ -1,4 +1,5 @@
 use super::*;
+use crate::tools::tls;
 use crate::{
     init::info::Information,
     tools::{messages::WaitForMessages, Auth},
@@ -40,7 +41,9 @@ impl MqttSender {
             .context("Failed to create client")?;
 
         let mut ssl_opts = paho_mqtt::SslOptionsBuilder::new();
-        ssl_opts.enable_server_cert_auth(false).verify(false);
+        ssl_opts
+            .trust_store(tls::default_ca_certs_path()?)
+            .context("Failed to load CA bundle for MQTT sender client")?;
 
         let mut conn_opts = paho_mqtt::ConnectOptionsBuilder::new();
 

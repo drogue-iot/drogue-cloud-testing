@@ -2,6 +2,7 @@ pub mod assert;
 pub mod http;
 pub mod messages;
 pub mod mqtt;
+pub mod tls;
 
 #[derive(Clone, Debug)]
 pub enum Auth {

@@ -20,11 +20,16 @@ CONSOLE_URL ?= $(PROTO)://console.$(DOMAIN)
 API_URL ?= $(PROTO)://api.$(DOMAIN)
 RUST_LOG ?= info
 
+ifndef CERT_BASE
+$(error Missing CERT_BASE variable. This is typically 'build/certs' in the directory you ran the installation)
+endif
+
 .PHONY: info
 info:
 	@echo API: $(API_URL)
 	@echo Console: $(CONSOLE_URL)
 	@echo NS: $(DROGUE_NS)
+	@echo Certificate base: $(CERT_BASE)
 
 .PHONY: start
 start:
@@ -48,4 +53,5 @@ test-run:
 		RUST_LOG=$(RUST_LOG) \
 		TEST_USER=admin \
  		TEST_PASSWORD=admin123456 \
+ 		CERT_BASE=$(CERT_BASE) \
 		cargo test -- --test-threads=1 $(TEST_ARGS) $(TESTS)

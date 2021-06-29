@@ -3,16 +3,30 @@ use crate::tools::Auth;
 use std::collections::HashMap;
 use url::Url;
 
-#[derive(Clone, Debug)]
-pub struct HttpSender {
-    http_url: Url,
+pub trait ClientBuilderProvider {
+    fn new_client_builder(&self) -> anyhow::Result<reqwest::ClientBuilder>;
 }
 
-impl HttpSender {
-    pub fn new(info: &Information) -> anyhow::Result<Self> {
+#[derive(Clone, Debug)]
+pub struct HttpSender<'cb, CB>
+where
+    CB: ClientBuilderProvider,
+{
+    http_url: Url,
+    client_builder: &'cb CB,
+}
+
+impl<'cb, CB> HttpSender<'cb, CB>
+where
+    CB: ClientBuilderProvider,
+{
+    pub fn new(info: &Information, client_builder: &'cb CB) -> Self {
         let http_url = info.http.url.clone();
 
-        Ok(Self { http_url })
+        Self {
+            http_url,
+            client_builder,
+        }
     }
 
     pub async fn send(
@@ -23,17 +37,17 @@ impl HttpSender {
         params: HashMap<String, String>,
         payload: Option<Vec<u8>>,
     ) -> anyhow::Result<reqwest::Response> {
-        let client = reqwest::ClientBuilder::new().danger_accept_invalid_certs(true);
+        let builder = self.client_builder.new_client_builder()?;
 
-        let client = match &auth {
+        let builder = match &auth {
             Auth::X509Certificate(cert) => {
                 let id = reqwest::Identity::from_pem(&cert)?;
-                client.identity(id)
+                builder.identity(id)
             }
-            _ => client,
+            _ => builder,
         };
 
-        let client = client.build()?;
+        let client = builder.build()?;
 
         let mut url = self.http_url.clone();
         url.set_path(&format!("/v1/{}", channel));

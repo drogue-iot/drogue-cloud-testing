@@ -1,6 +1,5 @@
 use super::*;
-use crate::tools::assert::Message;
-use crate::tools::messages::WaitForMessages;
+use crate::tools::{assert::Message, messages::WaitForMessages, tls};
 use anyhow::Context;
 use futures::StreamExt;
 use serde_json::Value;
@@ -134,8 +133,8 @@ impl MqttReceiver {
             .context("Failed to create client")?;
 
         let ssl_opts = paho_mqtt::SslOptionsBuilder::new()
-            .enable_server_cert_auth(false)
-            .verify(false)
+            .trust_store(tls::default_ca_certs_path()?)
+            .context("Failed to load CA bundle for MQTT device client")?
             .finalize();
 
         let mut conn_opts = paho_mqtt::ConnectOptionsBuilder::new();
@@ -202,7 +201,7 @@ impl MqttReceiver {
                         payload: msg.payload().into(),
                     };
 
-                    log::info!("Received: {:#?}", msg);
+                    log::info!("Received: {:?}", msg);
 
                     msgs.push(msg.into_message(binary));
                 }

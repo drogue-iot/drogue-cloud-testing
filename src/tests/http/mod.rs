@@ -91,7 +91,7 @@ async fn test_single_http_to_mqtt_message(
 
     log::info!("Sending payload");
 
-    let response = HttpSender::new(&info)?
+    let response = HttpSender::new(&info, ctx)
         .send(
             channel,
             data.auth,

@@ -1,8 +1,9 @@
-use crate::common::setup;
-use crate::init::config::Config;
-use crate::init::drg::Drg;
-use crate::init::info::Information;
-use crate::init::web::WebDriver;
+use crate::{
+    common::setup,
+    init::{config::Config, drg::Drg, info::Information, web::WebDriver},
+    tools::{http::ClientBuilderProvider, tls},
+};
+use reqwest::ClientBuilder;
 use test_context::AsyncTestContext;
 use tokio::runtime::Handle;
 
@@ -39,12 +40,6 @@ impl Drop for TestContext {
     }
 }
 
-impl TestContext {
-    pub fn new() -> TestContext {
-        TestContext::default()
-    }
-}
-
 #[async_trait::async_trait]
 impl AsyncTestContext for TestContext {
     async fn setup() -> Self {
@@ -58,7 +53,16 @@ impl AsyncTestContext for TestContext {
     }
 }
 
+impl ClientBuilderProvider for TestContext {
+    fn new_client_builder(&self) -> anyhow::Result<ClientBuilder> {
+        Self::client_builder()
+    }
+}
+
 impl TestContext {
+    pub fn new() -> TestContext {
+        TestContext::default()
+    }
     pub async fn web(&mut self) -> anyhow::Result<WebDriver> {
         if let Some(web) = &self.web {
             Ok(web.clone())
@@ -83,7 +87,7 @@ impl TestContext {
         if let Some(client) = &self.client {
             Ok(client.clone())
         } else {
-            let client = reqwest::Client::new();
+            let client = Self::client_builder()?.build()?;
             self.client = Some(client.clone());
             Ok(client)
         }
@@ -98,5 +102,23 @@ impl TestContext {
             self.info = Some(info.clone());
             Ok(info)
         }
+    }
+
+    /// Create the client builder
+    pub fn client_builder() -> anyhow::Result<reqwest::ClientBuilder> {
+        // create basic builder
+
+        let mut builder = reqwest::ClientBuilder::new();
+
+        // add CA
+
+        for cert in tls::load_default_ca_certs()? {
+            log::info!("Adding root certificate");
+            builder = builder.add_root_certificate(cert);
+        }
+
+        // done
+
+        Ok(builder)
     }
 }
