@@ -188,19 +188,10 @@ impl MqttReceiver {
         let ctx = tokio::spawn(async move {
             log::info!("Starting message stream...");
             // we don't reconnect
-            while let Some(Some(ref msg)) = strm.next().await {
+            while let Some(Some(msg)) = strm.next().await {
                 if let Ok(mut msgs) = strm_messages.lock() {
-                    log::info!("Raw message: {:#?}", msg);
-
-                    let msg = MqttMessage {
-                        topic: msg.topic().into(),
-                        user_properties: msg.properties().user_iter().collect::<HashMap<_, _>>(),
-                        content_type: msg
-                            .properties()
-                            .get_string(paho_mqtt::PropertyCode::ContentType),
-                        payload: msg.payload().into(),
-                    };
-
+                    log::info!("Raw message: {:?}", msg);
+                    let msg = MqttMessage::from(msg);
                     log::info!("Received: {:?}", msg);
 
                     msgs.push(msg.into_message(binary));
