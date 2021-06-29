@@ -8,7 +8,7 @@ on:
       containerRegistry:
         description: The container registry prefix
         required: true
-        default: ghcr.io/drogue-cloud
+        default: ghcr.io/drogue-iot
       cluster:
         description: The cluster type
         default: kind
