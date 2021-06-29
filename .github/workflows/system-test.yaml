@@ -5,6 +5,10 @@ on:
       releaseUrl:
         description: The URL to the release file
         required: true
+      containerRegistry:
+        description: The container registry prefix
+        required: true
+        default: ghcr.io/drogue-cloud
       cluster:
         description: The cluster type
         default: kind
@@ -168,7 +172,7 @@ jobs:
         run: |
           cd release
           ./scripts/drgadm deploy \
-            -s defaults.images.repository=quay.io/ctrontesting
+            -s defaults.images.repository=${{ github.event.inputs.containerRegistry }}
         timeout-minutes: 20
 
       - name: Run tests
