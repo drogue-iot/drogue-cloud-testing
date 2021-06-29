@@ -45,7 +45,7 @@ async fn test_single_mqtt_command(
 
     // send the telemetry message
 
-    let mut mqtt = MqttSender::new(&info, data.auth, version).await?;
+    let mut mqtt = MqttSender::new(&info, data.auth, version, ctx).await?;
     mqtt.subscribe_commands()
         .await
         .expect("MQTT publish to succeed");

@@ -4,6 +4,9 @@ use crate::{
     tools::{http::ClientBuilderProvider, tls},
 };
 use reqwest::ClientBuilder;
+use std::io::Write;
+use std::path::PathBuf;
+use tempfile::NamedTempFile;
 use test_context::AsyncTestContext;
 use tokio::runtime::Handle;
 
@@ -12,6 +15,7 @@ pub struct TestContext {
     drg: Option<Drg>,
     info: Option<Information>,
     client: Option<reqwest::Client>,
+    temp_files: Vec<NamedTempFile>,
 }
 
 impl Default for TestContext {
@@ -23,6 +27,7 @@ impl Default for TestContext {
             drg: None,
             info: None,
             client: None,
+            temp_files: vec![],
         }
     }
 }
@@ -120,5 +125,14 @@ impl TestContext {
         // done
 
         Ok(builder)
+    }
+
+    pub fn create_temp_file(&mut self, content: &[u8]) -> anyhow::Result<PathBuf> {
+        let mut file = NamedTempFile::new()?;
+        file.write_all(content)?;
+        file.flush()?;
+        let path = file.path().to_path_buf();
+        self.temp_files.push(file);
+        Ok(path)
     }
 }

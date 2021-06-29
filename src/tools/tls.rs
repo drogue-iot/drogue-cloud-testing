@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context};
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::path::PathBuf;
 
 /// Load a CA bundle
 pub fn load_ca_certs(cert_file: PathBuf) -> anyhow::Result<Vec<reqwest::Certificate>> {

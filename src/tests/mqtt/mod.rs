@@ -89,7 +89,7 @@ async fn test_single_mqtt_to_mqtt_message(
 
     log::info!("Sending payload");
 
-    MqttSender::new(&info, data.auth, endpoint_version)
+    MqttSender::new(&info, data.auth, endpoint_version, ctx)
         .await?
         .send(
             channel,

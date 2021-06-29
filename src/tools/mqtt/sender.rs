@@ -1,4 +1,5 @@
 use super::*;
+use crate::context::TestContext;
 use crate::tools::tls;
 use crate::{
     init::info::Information,
@@ -22,7 +23,12 @@ pub struct MqttSender {
 }
 
 impl MqttSender {
-    pub async fn new(info: &Information, auth: Auth, version: MqttVersion) -> anyhow::Result<Self> {
+    pub async fn new(
+        info: &Information,
+        auth: Auth,
+        version: MqttVersion,
+        ctx: &mut TestContext,
+    ) -> anyhow::Result<Self> {
         let client_id = Uuid::new_v4().to_string();
 
         let uri = format!("ssl://{}:{}", info.mqtt.host, info.mqtt.port);
@@ -41,6 +47,9 @@ impl MqttSender {
             .context("Failed to create client")?;
 
         let mut ssl_opts = paho_mqtt::SslOptionsBuilder::new();
+
+        ssl_opts.enable_server_cert_auth(true).verify(true);
+
         ssl_opts
             .trust_store(tls::default_ca_certs_path()?)
             .context("Failed to load CA bundle for MQTT sender client")?;
@@ -53,7 +62,9 @@ impl MqttSender {
                 conn_opts.user_name(username).password(password);
             }
             Auth::X509Certificate(cert) => {
-                unimplemented!("X.509 client certificates are not implemented in MQTT tests yet");
+                let file = ctx.create_temp_file(cert.as_slice())?;
+                ssl_opts.key_store(file)?;
+                // FIXME: need to actually test once `drg` is ready for this
             }
         }
 
