@@ -177,7 +177,12 @@ jobs:
 
       - name: Run tests
         run: |
-          xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ github.event.inputs.cluster }} | cargo2junit > results.xml
+          xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ github.event.inputs.cluster }} CERT_BASE="release/build/certs" | tee test-output.json
+
+      - name: Convert test data
+        if: always()
+        run: |
+          cat test-output.json | cargo2junit > results.xml
 
       - name: Upload test results
         if: always()
@@ -191,8 +196,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: junit
-          path: results.xml
+          name: test-output
+          path: |
+            results.xml
+            test-output.json
 
       - name: Collect logs
         if: failure()
