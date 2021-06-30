@@ -18,5 +18,5 @@ pub fn default_ca_certs_path() -> anyhow::Result<PathBuf> {
         .ok_or_else(|| anyhow!("Missing 'CERT_BASE' variable"))?
         .into();
 
-    Ok(cert_base.join("endpoints/ca-bundle.pem"))
+    Ok(cert_base.join("endpoints/root-cert.pem"))
 }
