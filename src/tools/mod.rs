@@ -1,4 +1,5 @@
 pub mod assert;
+pub mod coap;
 pub mod http;
 pub mod messages;
 pub mod mqtt;

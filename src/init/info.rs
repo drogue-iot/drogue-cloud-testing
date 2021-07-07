@@ -9,6 +9,7 @@ use serde::Deserialize;
 pub struct Information {
     pub api: Url,
     pub http: UrlInformation,
+    pub coap: UrlInformation,
     pub mqtt: HostPortInformation,
     pub mqtt_integration: HostPortInformation,
     pub command_url: Url,
