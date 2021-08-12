@@ -1,7 +1,7 @@
 use crate::init::info::Information;
 use crate::tools::Auth;
-use std::collections::HashMap;
 use coap_lite::CoapResponse;
+use std::collections::HashMap;
 use url::Url;
 
 mod helper;
@@ -28,7 +28,7 @@ impl CoapSender {
         let mut url = self.coap_url.to_string();
 
         println!("Client request: {}", url);
-    
-        Ok(helper::get(url.as_str()).unwrap())
+
+        Ok(helper::get(url.as_str(), auth).unwrap())
     }
 }

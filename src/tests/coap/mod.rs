@@ -102,7 +102,7 @@ async fn test_single_coap_to_mqtt_message(
         )
         .expect("CoAP call to succeed");
 
-    assert_eq!(response.get_status().clone(),ResponseType::Changed);
+    assert_eq!(response.get_status().clone(), ResponseType::Changed);
 
     log::info!("Payload sent, waiting for messages");
 

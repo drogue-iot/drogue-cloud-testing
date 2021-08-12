@@ -1,24 +1,33 @@
 use coap::CoAPClient;
-use coap_lite::{CoapOption,CoapRequest,CoapResponse};
+use coap_lite::{CoapOption, CoapRequest, CoapResponse};
+use regex::Regex;
 use std::io::{Error, ErrorKind, Result};
 use std::net::SocketAddr;
 use std::time::Duration;
-use regex::Regex;
 use url::Url;
 
+use crate::tools::Auth;
+
 /// Execute a single get request with a coap url and a specific timeout.
-pub fn get(url: &str) -> Result<CoapResponse> {
+pub fn get(url: &str, auth: Auth) -> Result<CoapResponse> {
     let (domain, port, path, queries) = parse_coap_url(url)?;
 
-    let auth="Basic ZGV2aWNlMUBhcHAxOmhleS1yb2RuZXk".as_bytes().to_vec();
+    let mut b64: String = String::new();
+    if let Auth::UsernamePassword(uname, passwd) = auth {
+        b64 = base64::encode_config(format!("{}:{}", uname, passwd), base64::STANDARD_NO_PAD);
+    }
+
+    let auth_header = format!("Basic {}", b64).as_bytes().to_vec();
 
     let mut packet: CoapRequest<SocketAddr> = CoapRequest::new();
     packet.set_path(path.as_str());
-    packet.message.add_option(CoapOption::Unknown(4209),auth);
-    println!("{:#?}",packet);
+    packet
+        .message
+        .add_option(CoapOption::Unknown(4209), auth_header);
+    println!("{:#?}", packet);
 
     if let Some(q) = queries {
-        packet.message.add_option(CoapOption::UriQuery,q);
+        packet.message.add_option(CoapOption::UriQuery, q);
     }
 
     let client = CoAPClient::new((domain.as_str(), port))?;
@@ -42,7 +51,10 @@ fn parse_coap_url(url: &str) -> Result<(String, u16, String, Option<Vec<u8>>)> {
         Some(h) => h,
         None => return Err(Error::new(ErrorKind::InvalidInput, "host error")),
     };
-    let host = Regex::new(r"^\[(.*?)]$").unwrap().replace(&host, "$1").to_string();
+    let host = Regex::new(r"^\[(.*?)]$")
+        .unwrap()
+        .replace(&host, "$1")
+        .to_string();
 
     let port = match url_params.port() {
         Some(p) => p,

@@ -4,10 +4,10 @@ use crate::{
     init::token::TokenInjector,
     tools::{messages::WaitForMessages, mqtt::MqttVersion},
 };
-use std::collections::LinkedList;
 use coap_lite::CoapOption;
 use rstest::{fixture, rstest};
 use serde_json::json;
+use std::collections::LinkedList;
 use uuid::Uuid;
 
 #[fixture]
@@ -139,7 +139,11 @@ async fn test_single_coap_command(
 
     assert_eq!(telemetry.get_status().clone(), ResponseType::Content);
     assert_eq!(
-        telemetry.message.get_option(CoapOption::Unknown(4210)).map(|v| v.front()).flatten(),
+        telemetry
+            .message
+            .get_option(CoapOption::Unknown(4210))
+            .map(|v| v.front())
+            .flatten(),
         Some(&"SET".as_bytes().to_vec())
     );
     let telemetry = serde_json::from_slice::<serde_json::Value>(&telemetry.message.payload);
