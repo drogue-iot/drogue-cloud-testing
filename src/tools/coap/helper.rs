@@ -1,6 +1,7 @@
 use coap::CoAPClient;
 use coap_lite::{CoapOption, CoapRequest, CoapResponse};
 use regex::Regex;
+use std::collections::HashMap;
 use std::io::{Error, ErrorKind, Result};
 use std::net::SocketAddr;
 use std::time::Duration;
@@ -9,8 +10,15 @@ use url::Url;
 use crate::tools::Auth;
 
 /// Execute a single get request with a coap url and a specific timeout.
-pub fn get(url: &str, auth: Auth) -> Result<CoapResponse> {
-    let (domain, port, path, queries) = parse_coap_url(url)?;
+pub fn get(
+    url: String,
+    channel: String,
+    _content_type: String,
+    params: HashMap<String, String>,
+    payload: Option<Vec<u8>>,
+    auth: Auth,
+) -> Result<CoapResponse> {
+    let (domain, port, path, queries) = parse_coap_url(format!("{}/v1/{}",url,channel))?;
 
     let mut b64: String = String::new();
     if let Auth::UsernamePassword(uname, passwd) = auth {
@@ -24,11 +32,18 @@ pub fn get(url: &str, auth: Auth) -> Result<CoapResponse> {
     packet
         .message
         .add_option(CoapOption::Unknown(4209), auth_header);
-    println!("{:#?}", packet);
+    
+    if let Some(p) = payload {
+        packet.message.payload = p;
+    } 
 
-    if let Some(q) = queries {
+    if let Some(mut q) = queries {
+        let mut p =format!("&{}",serde_urlencoded::to_string(params).unwrap()).as_bytes().to_vec();
+        q.append(&mut p);
         packet.message.add_option(CoapOption::UriQuery, q);
     }
+
+    println!("{:#?}", packet);
 
     let client = CoAPClient::new((domain.as_str(), port))?;
     client.send(&packet)?;
@@ -40,8 +55,8 @@ pub fn get(url: &str, auth: Auth) -> Result<CoapResponse> {
     }
 }
 
-fn parse_coap_url(url: &str) -> Result<(String, u16, String, Option<Vec<u8>>)> {
-    let url_params = match Url::parse(url) {
+fn parse_coap_url(url: String) -> Result<(String, u16, String, Option<Vec<u8>>)> {
+    let url_params = match Url::parse(url.as_str()) {
         Ok(url_params) => url_params,
         Err(_) => return Err(Error::new(ErrorKind::InvalidInput, "url error")),
     };

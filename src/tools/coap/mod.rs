@@ -25,10 +25,10 @@ impl CoapSender {
         params: HashMap<String, String>,
         payload: Option<Vec<u8>>,
     ) -> anyhow::Result<CoapResponse> {
-        let mut url = self.coap_url.to_string();
+        let url = self.coap_url.to_string();
 
         println!("Client request: {}", url);
 
-        Ok(helper::get(url.as_str(), auth).unwrap())
+        Ok(helper::get(url, channel, content_type, params, payload, auth).unwrap())
     }
 }
