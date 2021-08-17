@@ -32,7 +32,6 @@ async fn test_send_telemetry_pass(
             params: Default::default(),
             ..Default::default()
         },
-        false,
     )
     .await
 }
@@ -61,7 +60,6 @@ async fn test_send_telemetry_user(
             )),
             ..Default::default()
         },
-        false,
     )
     .await
 }
@@ -91,7 +89,6 @@ async fn test_send_telemetry_user_only(
             )),
             ..Default::default()
         },
-        false,
     )
     .await
 }
@@ -117,7 +114,6 @@ async fn test_send_telemetry_user_alias(
             auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
             ..Default::default()
         },
-        false
     )
     .await
 }
