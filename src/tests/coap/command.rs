@@ -36,10 +36,10 @@ async fn test_single_coap_command(
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app.clone()).expect("Create a new application");
     let device = app
-        .create_device(data.device, &data.spec)
-        .expect("Create new device");
+        .create_device(data.device.clone(), &data.spec)
+        .expect("Failed to create a new device");
 
     // send telemetry (with command time out)
 
@@ -121,8 +121,8 @@ async fn test_single_coap_command(
 
     let command = command.await;
 
-    let telemetry = telemetry.expect("");
-    let command = command.expect("");
+    let telemetry = telemetry.expect("Failed to get CoAP response");
+    let command = command.expect("Failed to get command response");
 
     // we must wait for the MQTT message to arrive … that is the right time to send off the command
 
