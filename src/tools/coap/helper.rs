@@ -37,9 +37,12 @@ pub fn get(
         packet.message.payload = p;
     } 
 
+    let mut p = serde_urlencoded::to_string(params).unwrap().as_bytes().to_vec();
+    packet.message.add_option(CoapOption::UriQuery, p);
+    
     if let Some(mut q) = queries {
-        let mut p =format!("&{}",serde_urlencoded::to_string(params).unwrap()).as_bytes().to_vec();
-        q.append(&mut p);
+        p.append(&mut "&".as_bytes().to_vec());
+        p.append(&mut q);
         packet.message.add_option(CoapOption::UriQuery, q);
     }
 
