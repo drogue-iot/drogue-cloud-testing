@@ -54,7 +54,11 @@ async fn test_single_coap_to_mqtt_message(
     ctx: &mut TestContext,
     version: MqttVersion,
     data: TestData,
+    is_created: bool,
 ) -> anyhow::Result<()> {
+    
+    log::info!("entered coap_to_mqtt!");
+    
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
 
