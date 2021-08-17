@@ -121,8 +121,8 @@ async fn test_single_coap_command(
 
     let command = command.await;
 
-    let telemetry = telemetry.expect("");
-    let command = command.expect("");
+    let telemetry = telemetry.expect("Failed to get CoAP response");
+    let command = command.expect("Failed to get command response");
 
     // we must wait for the MQTT message to arrive … that is the right time to send off the command
 
