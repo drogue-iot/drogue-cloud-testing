@@ -40,6 +40,7 @@ pub fn get(
     if let Some(mut q) = queries {
         let mut p =format!("&{}",serde_urlencoded::to_string(params).unwrap()).as_bytes().to_vec();
         q.append(&mut p);
+        log::info!("{:?}",q);
         packet.message.add_option(CoapOption::UriQuery, q);
     }
 

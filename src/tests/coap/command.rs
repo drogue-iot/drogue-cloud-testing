@@ -43,12 +43,6 @@ async fn test_single_coap_command(
 
     // send telemetry (with command time out)
 
-    let app_test = data.app.clone();
-    let dev_test = data.device.clone();
-
-    assert_eq!(app.name(),app_test);
-    assert_eq!(device.name(),dev_test);
-
     log::info!("Sending payload");
 
     // add the command timeout
