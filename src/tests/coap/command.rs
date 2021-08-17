@@ -36,12 +36,18 @@ async fn test_single_coap_command(
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app.clone()).expect("Create a new application");
     let device = app
-        .create_device(data.device, &data.spec)
-        .expect("Create new device");
+        .create_device(data.device.clone(), &data.spec)
+        .expect("Failed to create a new device");
 
     // send telemetry (with command time out)
+
+    let app_test = data.app.clone();
+    let dev_test = data.device.clone();
+
+    assert_eq!(app.name(),app_test);
+    assert_eq!(device.name(),dev_test);
 
     log::info!("Sending payload");
 
