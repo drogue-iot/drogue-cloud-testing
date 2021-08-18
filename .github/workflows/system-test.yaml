@@ -7,7 +7,7 @@ on:
         required: false
       containerRegistry:
         description: The container registry prefix
-        required: true
+        required: false
         default: ghcr.io/drogue-iot
       cluster:
         description: The cluster type
