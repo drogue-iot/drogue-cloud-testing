@@ -196,7 +196,7 @@ jobs:
 
       - name: Create Kind cluster
         if: ${{ github.event.inputs.cluster == 'kind' }}
-        uses: helm/kind-action@v1.1.0
+        uses: helm/kind-action@v1.2.0
         with:
           wait: 300s
           cluster_name: kind
