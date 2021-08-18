@@ -7,7 +7,6 @@ use crate::{
 use coap_lite::CoapOption;
 use rstest::{fixture, rstest};
 use serde_json::json;
-use std::collections::LinkedList;
 use uuid::Uuid;
 
 #[fixture]
@@ -47,7 +46,7 @@ async fn test_single_coap_command(
 
     // add the command timeout
     let mut params = data.params;
-    params.insert("ct".into(), "5000".into());
+    params.insert("ct".into(), "6000".into());
 
     // send the telemetry message
 
@@ -132,10 +131,6 @@ async fn test_single_coap_command(
     let command = command.text().await;
     assert!(command.is_ok());
     assert_eq!(command.unwrap(), "");
-
-    // assert telemetry response
-    let mut queries = LinkedList::new();
-    queries.push_back("ct=10".as_bytes().to_vec());
 
     assert_eq!(telemetry.get_status().clone(), ResponseType::Content);
     assert_eq!(
