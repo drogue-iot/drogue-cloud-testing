@@ -164,7 +164,12 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git clone --recurse-submodules https://github.com/drogue-iot/drogue-cloud
+
+          git clone https://github.com/drogue-iot/drogue-cloud
+
+          git config --file=.gitmodules submodule.helm-charts.url https://github.com/drogue-iot/drogue-cloud-helm-charts.git
+          git submodule sync
+          git submodule update --init --recursive --remote
 
           cd drogue-cloud
           make build build-images
