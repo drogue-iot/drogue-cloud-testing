@@ -162,6 +162,8 @@ jobs:
       - name: Perform a local build
         if: ${{ github.event.inputs.releaseUrl == '' }}
         run: |
+          git version
+
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
@@ -169,6 +171,7 @@ jobs:
 
           cd drogue-cloud
 
+          cat .gitmodules
           git submodule set-url helm-charts https://github.com/drogue-iot/drogue-cloud-helm-charts.git
           cat .gitmodules
           git submodule update --init --recursive --remote
