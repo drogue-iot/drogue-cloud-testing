@@ -169,7 +169,7 @@ jobs:
 
           cd drogue-cloud
           git config --file=.gitmodules submodule.helm-charts.url https://github.com/drogue-iot/drogue-cloud-helm-charts.git
-          git submodule sync
+          cat .gitmodules
           git submodule update --init --recursive --remote
           make build build-images
           make tag-images CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
