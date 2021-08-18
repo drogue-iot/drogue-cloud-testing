@@ -171,13 +171,8 @@ jobs:
 
           cd drogue-cloud
 
-          cat .gitmodules
           git config --file=.gitmodules submodule."helm-charts".url https://github.com/drogue-iot/drogue-cloud-helm-charts.git
-          cat .gitmodules
-          echo Sync
           git submodule sync
-          cat .git/config
-          echo Update
           git submodule update --init
 
           make build build-images
@@ -209,7 +204,7 @@ jobs:
 
       - name: Load images in kind
         if: ${{ ( github.event.inputs.releaseUrl == '' ) && ( github.event.inputs.cluster == 'kind' ) }}
-        run: make kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
+        run: make -C drogue-cloud kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
 
       - name: Create Minikube cluster
         if: ${{ github.event.inputs.cluster == 'minikube' }}
@@ -236,6 +231,7 @@ jobs:
         env:
           TEST_CERTS_IMAGE: "dev.local/test-cert-generator:${{ github.run_id }}"
         run: |
+          cd release
           ./scripts/drgadm deploy \
             -m \
             -s defaults.images.repository=dev.local \
