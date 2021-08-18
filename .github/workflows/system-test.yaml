@@ -162,6 +162,7 @@ jobs:
       - name: Perform a local build
         if: ${{ github.event.inputs.releaseUrl == '' }}
         run: |
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
           git clone --recurse-submodules https://github.com/drogue-iot/drogue-cloud
 
           cd drogue-cloud
