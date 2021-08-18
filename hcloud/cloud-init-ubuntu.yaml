@@ -85,6 +85,7 @@ packages:
   - firefox
   - curl
   - unzip
+  - zip
   - qemu-kvm
   - libvirt-daemon-system
   - libvirt-clients
