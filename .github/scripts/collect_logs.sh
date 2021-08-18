@@ -53,6 +53,7 @@ gather "services"
 gather "deployments"
 gather "secrets"
 gather "configmaps"
+gather "statefulsets"
 
 # Keycloak
 
