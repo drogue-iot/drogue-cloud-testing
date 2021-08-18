@@ -148,18 +148,32 @@ jobs:
           mv drogue-install-*/* .
           find .
 
+      - uses: actions/cache@v2
+        if: ${{ github.event.inputs.releaseUrl == '' }}
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            drogue-cloud/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/drogue-cloud/Cargo.lock') }}
+
       - name: Perform a local build
         if: ${{ github.event.inputs.releaseUrl == '' }}
         run: |
           git clone https://github.com/drogue-iot/drogue-cloud
+
           cd drogue-cloud
           make build build-images
           make tag-images CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
-
+          make -C installer
           cd ..
+
           mkdir release
           cd release
-          tar  --strip-components=1 -xvzf drogue-cloud/installer/build/drogue-install-${{ github.event.inputs.cluster }}-latest.tar.gz
+          ls ../drogue-cloud/installer/build
+          tar  --strip-components=1 -xvzf ../drogue-cloud/installer/build/drogue-install-${{ github.event.inputs.cluster }}-latest.tar.gz
           cd ..
 
       - name: Check for installer script
