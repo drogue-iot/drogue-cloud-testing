@@ -176,10 +176,9 @@ jobs:
           cat .gitmodules
           echo Sync
           git submodule sync
-          echo pull
-          git submodule foreach git pull
+          cat .git/config
           echo Update
-          git submodule update --init --recursive --remote
+          git submodule update --init
 
           make build build-images
           make tag-images CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
