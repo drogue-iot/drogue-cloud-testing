@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
     inputs:
       releaseUrl:
-        description: The URL to the release file
-        required: true
+        description: The URL to the release file. An empty URL performs a build of 'main' first.
+        required: false
       containerRegistry:
         description: The container registry prefix
         required: true
@@ -136,7 +136,10 @@ jobs:
         run: |
           cargo install --force cargo2junit
 
+      # get the content to test
+
       - name: Download release
+        if: ${{ github.event.inputs.releaseUrl != '' }}
         run: |
           mkdir release
           cd release
@@ -145,10 +148,26 @@ jobs:
           mv drogue-install-*/* .
           find .
 
+      - name: Perform a local build
+        if: ${{ github.event.inputs.releaseUrl == '' }}
+        run: |
+          git clone https://github.com/drogue-iot/drogue-cloud
+          cd drogue-cloud
+          make build build-images
+          make tag-images CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
+
+          cd ..
+          mkdir release
+          cd release
+          tar  --strip-components=1 -xvzf drogue-cloud/installer/build/drogue-install-${{ github.event.inputs.cluster }}-latest.tar.gz
+          cd ..
+
       - name: Check for installer script
         run: |
           cd release
           test -x ./scripts/drgadm
+
+      # start the cluster
 
       - name: Create Kind cluster
         if: ${{ github.event.inputs.cluster == 'kind' }}
@@ -158,6 +177,10 @@ jobs:
           cluster_name: kind
           config: kind/cluster-config.yaml
 
+      - name: Load images in kind
+        if: ${{ ( github.event.inputs.releaseUrl == '' ) && ( github.event.inputs.cluster == 'kind' ) }}
+        run: make kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
+
       - name: Create Minikube cluster
         if: ${{ github.event.inputs.cluster == 'minikube' }}
         run: |
@@ -166,7 +189,10 @@ jobs:
           minikube start --cpus 4 --memory 14336 --disk-size 20gb --addons ingress
           sudo minikube tunnel &
 
-      - name: Deploy Drogue
+      # Start deployment
+
+      - name: Deploy Drogue (release build)
+        if: ${{ github.event.inputs.releaseUrl != '' }}
         env:
           DEBUG: "true"
         run: |
@@ -174,6 +200,20 @@ jobs:
           ./scripts/drgadm deploy \
             -s defaults.images.repository=${{ github.event.inputs.containerRegistry }}
         timeout-minutes: 20
+
+      - name: Deploy drogue (local build)
+        if: ${{ github.event.inputs.releaseUrl == '' }}
+        env:
+          TEST_CERTS_IMAGE: "dev.local/test-cert-generator:${{ github.run_id }}"
+        run: |
+          ./scripts/drgadm deploy \
+            -m \
+            -s defaults.images.repository=dev.local \
+            -s defaults.images.tag=${{ github.run_id }} \
+            -s defaults.images.pullPolicy=Never
+        timeout-minutes: 20
+
+      # Run tests
 
       - name: Run tests
         run: |
