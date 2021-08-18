@@ -162,7 +162,7 @@ jobs:
       - name: Perform a local build
         if: ${{ github.event.inputs.releaseUrl == '' }}
         run: |
-          git clone https://github.com/drogue-iot/drogue-cloud
+          git clone --recurse-submodules https://github.com/drogue-iot/drogue-cloud
 
           cd drogue-cloud
           make build build-images
