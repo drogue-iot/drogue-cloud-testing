@@ -176,6 +176,8 @@ jobs:
           cat .gitmodules
           echo Sync
           git submodule sync
+          echo pull
+          git submodule foreach git pull
           echo Update
           git submodule update --init --recursive --remote
 
