@@ -261,6 +261,8 @@ jobs:
           check_name: Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: results.xml
+          pull_request_build: commit
+          comment_mode: off
 
       - name: Upload raw test results
         if: always()
