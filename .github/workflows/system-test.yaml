@@ -235,7 +235,7 @@ jobs:
           ./scripts/drgadm deploy \
             -m \
             -s defaults.images.repository=dev.local \
-            -s defaults.images.tag=${{ github.run_id }} \
+            --set-string defaults.images.tag=${{ github.run_id }} \
             -s defaults.images.pullPolicy=Never
         timeout-minutes: 20
 
