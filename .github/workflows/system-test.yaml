@@ -96,6 +96,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # drop once hcloud issue is resolved
+          echo "set grub-efi/install_devices /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0-0-part15" | sudo debconf-communicate
           sudo apt-get -y install gcc libssl-dev make httpie xvfb
 
       - name: Install toolchain
