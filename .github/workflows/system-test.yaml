@@ -76,6 +76,7 @@ jobs:
 
     env:
       CLUSTER: ${{ github.event.inputs.cluster }}
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
 
