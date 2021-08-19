@@ -176,12 +176,8 @@ jobs:
         if: ${{ github.event.inputs.releaseUrl == '' }}
         with:
           path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
             drogue-cloud/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/drogue-cloud/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-drogue-${{ hashFiles('**/drogue-cloud/Cargo.lock') }}
 
       - name: Perform a local build
         if: ${{ github.event.inputs.releaseUrl == '' }}
