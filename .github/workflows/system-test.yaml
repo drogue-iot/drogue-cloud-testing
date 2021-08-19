@@ -91,11 +91,11 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - run: env | sort
+
       - name: Install dependencies
         run: |
           sudo apt-get -y install gcc libssl-dev make httpie xvfb
-
-      - run: env | sort
 
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
