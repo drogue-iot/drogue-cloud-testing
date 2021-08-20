@@ -253,7 +253,9 @@ jobs:
       - name: Run tests
         run: xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ github.event.inputs.cluster }} CERT_BASE="release/build/certs" > test-output.json
 
+      # using tee combined with the xvfb-run swallows up the error response, even though "pipefail" is enabled
       - run: cat test-output.json
+        if: always()
 
       - name: Convert test data
         if: always()
