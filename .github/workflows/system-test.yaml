@@ -260,16 +260,6 @@ jobs:
         run: |
           cat test-output.json | cargo2junit > results.xml
 
-      - name: Upload test results
-        if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          check_name: Test Results
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: results.xml
-          pull_request_build: commit
-          comment_mode: off
-
       - name: Upload raw test results
         if: always()
         uses: actions/upload-artifact@v2
