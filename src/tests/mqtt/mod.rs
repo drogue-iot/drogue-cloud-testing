@@ -104,7 +104,7 @@ async fn test_single_mqtt_to_mqtt_message(
 
     mqtt.wait_for_messages(1, Duration::from_secs(5))
         .await
-        .expect("No timeout");
+        .expect("Message should not time out");
 
     log::info!("Check messages");
 
