@@ -12,7 +12,8 @@ The following utilities must be installed and available in your PATH :
 - httpie : https://github.com/httpie/httpie/releases
 
 ## Run the tests
-You will need an installation of Drogue Cloud. If you are using Minikube or Kind, you can then can just run:
+You will need an installation of Drogue Cloud. If you are using Minikube or Kind, 
+you can then run:
     geckodriver
     make CERT_BASE=/path/to/drogue-cloud/build/certs/
 Assuming you deployed drogue-cloud from `/path/to/drogue-cloud`.
