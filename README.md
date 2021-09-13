@@ -4,9 +4,18 @@ This project hosts a testing suite for testing a full Drogue IoT Cloud installat
 
 ## Running
 
-You will need an installation of Drogue Cloud. If you are using Minikube or Kind, you can then can just run:
+### Requirements
 
-    make
+The following utilities must be installed and available in your PATH :
+- Geckodriver : https://github.com/mozilla/geckodriver/relases
+- drg : https://github.com/drogue-cloud/drg/releases
+- httpie : https://github.com/httpie/httpie/releases
+
+## Run the tests
+You will need an installation of Drogue Cloud. If you are using Minikube or Kind, you can then can just run:
+    geckodriver
+    make CERT_BASE=/path/to/drogue-cloud/build/certs/
+Assuming you deployed drogue-cloud from `/path/to/drogue-cloud`.
 
 Otherwise, you need to pass in the application domain:
 
