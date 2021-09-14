@@ -3,10 +3,8 @@ use crate::{
     context::TestContext,
     init::token::TokenInjector,
     tools::{messages::WaitForMessages, mqtt::MqttVersion},
-    common::setup,
 };
-use futures::join;
-use reqwest::header::HeaderValue;
+use coap_lite::CoapOption;
 use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::Uuid;
@@ -24,12 +22,11 @@ async fn test_command(
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
 ) -> anyhow::Result<()> {
-    setup();
     let app = Uuid::new_v4().to_string();
-    test_single_http_command(&mut ctx, version, TestData::simple(&app, "device1")).await
+    test_single_coap_command(&mut ctx, version, TestData::simple(&app, "device1")).await
 }
 
-async fn test_single_http_command(
+async fn test_single_coap_command(
     ctx: &mut TestContext,
     version: MqttVersion,
     data: TestData,
@@ -38,10 +35,10 @@ async fn test_single_http_command(
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app.clone()).expect("Create a new application");
     let device = app
-        .create_device(data.device, &data.spec)
-        .expect("Create new device");
+        .create_device(data.device.clone(), &data.spec)
+        .expect("Failed to create a new device");
 
     // send telemetry (with command time out)
 
@@ -49,7 +46,7 @@ async fn test_single_http_command(
 
     // add the command timeout
     let mut params = data.params;
-    params.insert("ct".into(), "5000".into());
+    params.insert("ct".into(), "6000".into());
 
     // send the telemetry message
 
@@ -81,7 +78,7 @@ async fn test_single_http_command(
 
     // start telemetry
 
-    let sender = HttpSender::new(&info, ctx);
+    let sender = CoapSender::new(&info);
     let telemetry = sender.send(
         channel,
         auth,
@@ -121,10 +118,10 @@ async fn test_single_http_command(
         Ok::<_, anyhow::Error>(command)
     };
 
-    let (telemetry, command) = join!(telemetry, command);
+    let command = command.await;
 
-    let telemetry = telemetry.expect("");
-    let command = command.expect("");
+    let telemetry = telemetry.expect("Failed to get CoAP response");
+    let command = command.expect("Failed to get command response");
 
     // we must wait for the MQTT message to arrive … that is the right time to send off the command
 
@@ -135,14 +132,16 @@ async fn test_single_http_command(
     assert!(command.is_ok());
     assert_eq!(command.unwrap(), "");
 
-    // assert telemetry response
-
-    assert!(telemetry.status().is_success());
+    assert_eq!(telemetry.get_status().clone(), ResponseType::Content);
     assert_eq!(
-        telemetry.headers().get("Command"),
-        Some(&HeaderValue::from_str("SET")?)
+        telemetry
+            .message
+            .get_option(CoapOption::Unknown(4210))
+            .map(|v| v.front())
+            .flatten(),
+        Some(&"SET".as_bytes().to_vec())
     );
-    let telemetry = telemetry.json::<serde_json::Value>().await;
+    let telemetry = serde_json::from_slice::<serde_json::Value>(&telemetry.message.payload);
     assert!(telemetry.is_ok());
     assert_eq!(telemetry.unwrap(), json!({"set-command": "foo"}));
 
