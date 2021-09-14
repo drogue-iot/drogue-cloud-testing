@@ -71,8 +71,6 @@ impl DerefMut for WebDriver {
 #[cfg(test)]
 mod test {
     use crate::context::TestContext;
-    // use fantoccini::wait::CanWait;
-    use fantoccini::Locator;
     use std::time::Duration;
     use test_context::test_context;
     use tokio::time::sleep;
@@ -106,7 +104,7 @@ mod test {
 
         web.screenshot("test_web_test/1").await.ok();
 
-        assert_eq!("https://blog.drogue.io/", current_url.as_ref());
+        assert_eq!("https://www.drogue.io/", current_url.as_ref());
 
         /*
         let mut element = web

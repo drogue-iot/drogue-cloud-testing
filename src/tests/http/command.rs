@@ -3,6 +3,7 @@ use crate::{
     context::TestContext,
     init::token::TokenInjector,
     tools::{messages::WaitForMessages, mqtt::MqttVersion},
+    common::setup,
 };
 use futures::join;
 use reqwest::header::HeaderValue;
@@ -23,6 +24,7 @@ async fn test_command(
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
 ) -> anyhow::Result<()> {
+    setup();
     let app = Uuid::new_v4().to_string();
     test_single_http_command(&mut ctx, version, TestData::simple(&app, "device1")).await
 }
