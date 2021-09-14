@@ -142,6 +142,10 @@ jobs:
         run: |
           cargo install --force cargo2junit
 
+      - name: Install markdown-test-report
+        run: |
+          cargo install --git https://github.com/ctron/markdown-test-report.git
+
       # get the content to test
 
       - name: Download release
@@ -255,6 +259,9 @@ jobs:
       - run: cat test-output.json
         if: always()
 
+      - run: markdown-test-report
+        if: always()
+
       - name: Convert test data
         if: always()
         run: |
@@ -268,6 +275,7 @@ jobs:
           path: |
             results.xml
             test-output.json
+            test-output.md
 
       - name: Collect logs
         if: failure()
