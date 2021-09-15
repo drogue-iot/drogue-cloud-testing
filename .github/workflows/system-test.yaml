@@ -277,6 +277,26 @@ jobs:
             test-output.json
             test-output.md
 
+      - name: Publish test results
+        if: always()
+        run: |
+          git config --global user.name "GitHub update workflow"
+          git config --global user.email 'ctron@users.noreply.github.com'
+
+          git checkout gh-pages
+
+          cp test-output.md _posts/$(date "+%Y-%m-%d")-test-run-${GITHUB_RUN_ID}.md
+
+          git add -A
+          if ! git diff --cached --exit-code; then
+            echo "Changes have been detected, commit and push ..."
+            git commit -am "Automatic update ($GITHUB_RUN_ID/$GITHUB_RUN_NUMBER)"
+            git log --graph --abbrev-commit --date=relative -n 5
+            git push
+          else
+            echo "No changes have been detected since last build, nothing to publish"
+          fi
+
       - name: Collect logs
         if: failure()
         run: |
