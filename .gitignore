@@ -2,3 +2,9 @@
 /screenshots
 
 .idea/
+
+# Leftovers from gh-pages branch
+vendor/
+.jekyll-cache/
+_site/
+Gemfile.*
