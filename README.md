@@ -6,16 +6,19 @@ This project hosts a testing suite for testing a full Drogue IoT Cloud installat
 
 ### Requirements
 
-The following utilities must be installed and available in your PATH :
-- Geckodriver : https://github.com/mozilla/geckodriver/relases
-- drg : https://github.com/drogue-cloud/drg/releases
-- httpie : https://github.com/httpie/httpie/releases
+The following utilities must be installed and available in your PATH:
+
+- Geckodriver: https://github.com/mozilla/geckodriver/relases
+- drg: https://github.com/drogue-cloud/drg/releases
+- httpie: https://github.com/httpie/httpie/releases
 
 ## Run the tests
+
 You will need an installation of Drogue Cloud. If you are using Minikube or Kind, 
 you can then run:
-    geckodriver
+
     make CERT_BASE=/path/to/drogue-cloud/build/certs/
+
 Assuming you deployed drogue-cloud from `/path/to/drogue-cloud`.
 
 Otherwise, you need to pass in the application domain:
@@ -25,6 +28,10 @@ Otherwise, you need to pass in the application domain:
 Or explicitly the console and API URL:
 
     make CONSOLE_URL=https://my-console.tld. API_URL=https://my-api.tld.
+
+You can run individual tests, by passing them in using the `TESTS` variable:
+
+    make … TESTS=tests::http::telemetry::test_send_telemetry_pass::version_3
 
 ## Rust and testing
 
