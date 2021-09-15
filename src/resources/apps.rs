@@ -25,7 +25,12 @@ impl Application {
     }
 
     pub fn wait_ready(&self) -> anyhow::Result<()> {
-        self.wait_condition("Ready", Duration::from_secs(5 * 60))
+        // we first wait for KafkaReady, as that gets added shortly after the application was created
+        self.wait_condition("KafkaReady", Duration::from_secs(5 * 60))?;
+        // then we wait for the global "ready", which now includes kafka
+        self.wait_condition("Ready", Duration::from_secs(5 * 60))?;
+        // all good
+        Ok(())
     }
 
     pub fn expect_ready(self) -> Self {
