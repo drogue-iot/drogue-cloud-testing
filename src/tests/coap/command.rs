@@ -35,7 +35,9 @@ async fn test_single_coap_command(
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app.clone()).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app.clone())
+        .expect("Create a new application")
+        .expect_ready();
     let device = app
         .create_device(data.device.clone(), &data.spec)
         .expect("Failed to create a new device");

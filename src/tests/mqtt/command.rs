@@ -34,7 +34,9 @@ async fn test_single_mqtt_command(
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
 
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app)
+        .expect("Create a new application")
+        .expect_ready();
     let device = app
         .create_device(data.device, &data.spec)
         .expect("Create new device");
@@ -73,8 +75,6 @@ async fn test_single_mqtt_command(
 
     mqtt.wait_for_messages(1, Duration::from_secs(5)).await?;
 
-    let commands = mqtt.fetch_messages().expect("Get received commands");
-
     // assert command response
 
     assert!(command.status().is_success());
@@ -84,9 +84,13 @@ async fn test_single_mqtt_command(
 
     // assert the command
 
-    assert_eq!(commands.len(), 1);
+    let commands = mqtt.fetch_messages().expect("Get received commands");
+
+    log::debug!("Received commands: {:#?}", commands);
+
+    assert_eq!(commands.len(), 1, "Expect a single topic");
     let commands = commands.get("command/inbox/SET").expect("Command missing");
-    assert_eq!(commands.len(), 1);
+    assert_eq!(commands.len(), 1, "Expect a single command on that topic");
     let command = &commands[0];
     log::info!("Command: {:#?}", command);
     assert_eq!(command.topic, "command/inbox/SET");

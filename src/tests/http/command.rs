@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
+    common::setup,
     context::TestContext,
     init::token::TokenInjector,
     tools::{messages::WaitForMessages, mqtt::MqttVersion},
-    common::setup,
 };
 use futures::join;
 use reqwest::header::HeaderValue;
@@ -38,7 +38,9 @@ async fn test_single_http_command(
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app)
+        .expect("Create a new application")
+        .expect_ready();
     let device = app
         .create_device(data.device, &data.spec)
         .expect("Create new device");

@@ -10,7 +10,9 @@ async fn test_registry_create_app(ctx: &mut TestContext) {
 
     let uuid = Uuid::new_v4().to_string();
 
-    Application::new(ctx.drg().await.unwrap(), &uuid).expect("Created application");
+    Application::new(ctx.drg().await.unwrap(), &uuid)
+        .expect("Created application")
+        .expect_ready();
 }
 
 #[test_context(TestContext)]
@@ -22,7 +24,9 @@ async fn test_registry_create_app_twice(ctx: &mut TestContext) {
 
     // first attempt must succeed
 
-    let _app1 = Application::new(ctx.drg().await.unwrap(), &uuid).expect("Created application");
+    let _app1 = Application::new(ctx.drg().await.unwrap(), &uuid)
+        .expect("Created application")
+        .expect_ready();
 
     // second attempt needs to fail
     let app2 = Application::new(ctx.drg().await.unwrap(), &uuid);
@@ -40,7 +44,9 @@ async fn test_registry_create_and_delete(ctx: &mut TestContext) {
 
     // first attempt must succeed
 
-    let mut app1 = Application::new(drg.clone(), &uuid).expect("Created application");
+    let mut app1 = Application::new(drg.clone(), &uuid)
+        .expect("Created application")
+        .expect_ready();
     drg.delete_app(&uuid).expect("Deleted application");
 
     // currently deleting a non-existent app returns an error
@@ -58,7 +64,9 @@ async fn test_registry_create_app_and_device(ctx: &mut TestContext) {
 
     let uuid = Uuid::new_v4().to_string();
 
-    let app = Application::new(ctx.drg().await.unwrap(), &uuid).expect("Created application");
+    let app = Application::new(ctx.drg().await.unwrap(), &uuid)
+        .expect("Created application")
+        .expect_ready();
     let _device = app
         .create_device(
             "id1",
@@ -76,7 +84,9 @@ async fn test_registry_create_app_and_device_twice(ctx: &mut TestContext) {
 
     let uuid = Uuid::new_v4().to_string();
 
-    let app = Application::new(ctx.drg().await.unwrap(), &uuid).expect("Created application");
+    let app = Application::new(ctx.drg().await.unwrap(), &uuid)
+        .expect("Created application")
+        .expect_ready();
     let _device = app
         .create_device(
             "id1",
@@ -102,7 +112,9 @@ async fn test_registry_device_create_and_delete(ctx: &mut TestContext) {
 
     // first attempt must succeed
 
-    let app1 = Application::new(drg.clone(), &uuid).expect("Created application");
+    let app1 = Application::new(drg.clone(), &uuid)
+        .expect("Created application")
+        .expect_ready();
     let mut device1 = app1
         .create_device("id1", &Value::Null)
         .expect("Created device");

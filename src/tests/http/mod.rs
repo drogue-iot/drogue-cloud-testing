@@ -58,7 +58,9 @@ async fn test_single_http_to_mqtt_message(
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app)
+        .expect("Create a new application")
+        .expect_ready();
     let device = app
         .create_device(data.device, &data.spec)
         .expect("Create new device");

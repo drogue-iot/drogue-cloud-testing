@@ -1,7 +1,8 @@
 use crate::init::drg::Drg;
 use crate::resources::devices::Device;
 use serde_json::Value;
-use uuid::Uuid;
+use std::thread::sleep;
+use std::time::{Duration, SystemTime};
 
 pub struct Application {
     drg: Drg,
@@ -23,9 +24,47 @@ impl Application {
         })
     }
 
-    pub fn new_random(drg: Drg) -> anyhow::Result<Self> {
-        let uuid = Uuid::new_v4();
-        Self::new(drg, uuid.to_string())
+    pub fn wait_ready(&self) -> anyhow::Result<()> {
+        self.wait_condition("Ready", Duration::from_secs(5 * 60))
+    }
+
+    pub fn expect_ready(self) -> Self {
+        self.wait_ready()
+            .unwrap_or_else(|_| panic!("Expect application '{}' to become ready", self.name));
+        self
+    }
+
+    pub fn wait_condition(&self, condition: &str, duration: Duration) -> anyhow::Result<()> {
+        let start = SystemTime::now();
+
+        loop {
+            let json = self.drg.get_app(&self.name)?;
+            log::debug!("Application: {:?}", json);
+            let state = json["status"]["conditions"]
+                .as_array()
+                .and_then(|conditions| {
+                    conditions
+                        .iter()
+                        .find(|c| c["type"].as_str() == Some(condition))
+                })
+                .map(|c| c["status"].as_str() == Some("True"))
+                .unwrap_or_default();
+
+            log::debug!("Application - Condition: {} = {}", condition, state);
+
+            if state {
+                return Ok(());
+            }
+
+            if SystemTime::now().duration_since(start)? > duration {
+                anyhow::bail!(
+                    "Timeout expired. Condition '{}' still not ready.",
+                    condition
+                );
+            }
+
+            sleep(Duration::from_secs(1));
+        }
     }
 
     pub fn mark_deleted(&mut self) {

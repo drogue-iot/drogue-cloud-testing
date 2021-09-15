@@ -164,6 +164,11 @@ impl Drg {
         Ok(())
     }
 
+    pub fn get_app(&self, name: &str) -> anyhow::Result<serde_json::Value> {
+        let json = self.run(&["get", "app", name])?;
+        Ok(serde_json::from_str(&json)?)
+    }
+
     pub fn create_device(&self, app: &str, name: &str, spec: &Value) -> anyhow::Result<()> {
         let mut args = vec!["create", "device", "--app", app, name];
 
@@ -185,5 +190,10 @@ impl Drg {
     pub fn delete_device(&self, app: &str, name: &str) -> anyhow::Result<()> {
         self.run(&["delete", "device", "--app", app, name])?;
         Ok(())
+    }
+
+    pub fn get_device(&self, app: &str, name: &str) -> anyhow::Result<serde_json::Value> {
+        let json = self.run(&["get", "device", "--app", app, name])?;
+        Ok(serde_json::from_str(&json)?)
     }
 }
