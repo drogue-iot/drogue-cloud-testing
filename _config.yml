@@ -1,3 +1,11 @@
+
+title: Drogue IoT Cloud test results
+description: |
+  This page hosts test results for Drogue IoT Cloud test runs.
+
+twitter_username: DrogueIoT
+github_username: drogue-iot
+
 domain: drogue-iot.github.io
 url: https://drogue-iot.github.io
 baseurl: /drogue-cloud-testing
