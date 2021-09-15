@@ -1,0 +1,6 @@
+vendor/
+target/
+Gemfile.lock
+.jekyll-cache/
+_site/
+.idea/

@@ -10,3 +10,5 @@ domain: drogue-iot.github.io
 url: https://drogue-iot.github.io
 baseurl: /drogue-cloud-testing
 encoding: utf-8
+
+theme: minima
