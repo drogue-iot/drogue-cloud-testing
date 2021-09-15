@@ -1,8 +1,8 @@
+mod device;
 mod receiver;
-mod sender;
 
+pub use device::*;
 pub use receiver::*;
-pub use sender::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MqttVersion {

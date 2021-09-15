@@ -17,12 +17,12 @@ struct MqttMessageDispatcher {
     receiver_map: HashMap<String, Vec<MqttMessage>>,
 }
 
-pub struct MqttSender {
+pub struct MqttDevice {
     client: paho_mqtt::AsyncClient,
     dispatcher: Arc<Mutex<MqttMessageDispatcher>>,
 }
 
-impl MqttSender {
+impl MqttDevice {
     pub async fn new(
         info: &Information,
         auth: Auth,
@@ -81,6 +81,7 @@ impl MqttSender {
 
         let receiver_messages = dispatcher.clone();
         client.set_message_callback(move |_, msg| {
+            log::debug!("Got message: {:?}", msg);
             if let Some(msg) = msg {
                 if let Ok(mut messages) = receiver_messages.lock() {
                     let buffer = messages
@@ -113,7 +114,7 @@ impl MqttSender {
         props.push_string(paho_mqtt::PropertyCode::ContentType, &content_type)?;
 
         let msg = paho_mqtt::MessageBuilder::new()
-            .topic(format!("{}", channel))
+            .topic(channel.to_string())
             .payload(payload.unwrap_or_default())
             .qos(qos.into())
             .properties(props);
@@ -138,7 +139,7 @@ impl MqttSender {
     }
 }
 
-impl WaitForMessages for MqttSender {
+impl WaitForMessages for MqttDevice {
     fn num_messages(&self) -> usize {
         self.dispatcher
             .lock()

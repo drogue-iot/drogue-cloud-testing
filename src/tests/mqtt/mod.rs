@@ -5,7 +5,7 @@ use crate::{
     tools::{
         assert::{assert_msgs, Message},
         messages::WaitForMessages,
-        mqtt::{MqttQoS, MqttReceiver, MqttSender, MqttVersion},
+        mqtt::{MqttDevice, MqttQoS, MqttReceiver, MqttVersion},
         Auth,
     },
 };
@@ -91,7 +91,7 @@ async fn test_single_mqtt_to_mqtt_message(
 
     log::info!("Sending payload");
 
-    MqttSender::new(&info, data.auth, endpoint_version, ctx)
+    MqttDevice::new(&info, data.auth, endpoint_version, ctx)
         .await?
         .send(
             channel,

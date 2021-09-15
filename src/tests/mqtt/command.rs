@@ -47,7 +47,7 @@ async fn test_single_mqtt_command(
 
     // send the telemetry message
 
-    let mut mqtt = MqttSender::new(&info, data.auth, version, ctx).await?;
+    let mut mqtt = MqttDevice::new(&info, data.auth, version, ctx).await?;
     mqtt.subscribe_commands()
         .await
         .expect("MQTT publish to succeed");
@@ -71,16 +71,17 @@ async fn test_single_mqtt_command(
         .send()
         .await?;
 
-    // we sent the command, now fetch the msg from the buffer
-
-    mqtt.wait_for_messages(1, Duration::from_secs(5)).await?;
-
     // assert command response
 
     assert!(command.status().is_success());
     let command = command.text().await;
     assert!(command.is_ok());
+    // command call should not return payload
     assert_eq!(command.unwrap(), "");
+
+    // we sent the command, now fetch the msg from the buffer
+
+    mqtt.wait_for_messages(1, Duration::from_secs(5)).await?;
 
     // assert the command
 
@@ -94,8 +95,10 @@ async fn test_single_mqtt_command(
     let command = &commands[0];
     log::info!("Command: {:#?}", command);
     assert_eq!(command.topic, "command/inbox/SET");
+    let payload = command.payload.as_slice();
+    log::debug!("Payload: {:?}", String::from_utf8_lossy(payload));
     assert_eq!(
-        serde_json::from_slice::<serde_json::Value>(command.payload.as_slice())?,
+        serde_json::from_slice::<serde_json::Value>(payload)?,
         json!({"set-command": "foo"})
     );
 
