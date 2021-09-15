@@ -12,3 +12,11 @@ baseurl: /drogue-cloud-testing
 encoding: utf-8
 
 theme: minima
+
+show_excerpts: true
+
+minima:
+  social_links:
+    twitter: DrogueIoT
+    github: drogue-iot
+
