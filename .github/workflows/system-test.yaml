@@ -279,10 +279,18 @@ jobs:
             test-output.json
             test-output.md
 
+      - name: Revert changes
+        if: always()
+        run: |
+          git status
+          git diff
+          # seems like this file has changed, try restoring
+          git restore README.md
+
       - name: Publish test results
         if: always()
         run: |
-          git config --global user.name "GitHub update workflow"
+          git config --global user.name "GitHub workflow"
           git config --global user.email 'ctron@users.noreply.github.com'
 
           git checkout gh-pages
