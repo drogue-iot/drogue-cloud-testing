@@ -10,7 +10,7 @@ use url::Url;
 use crate::tools::Auth;
 
 /// Execute a single get request with a coap url and a specific timeout.
-pub fn get(
+pub async fn get(
     url: String,
     channel: String,
     _content_type: String,
@@ -18,7 +18,7 @@ pub fn get(
     payload: Option<Vec<u8>>,
     auth: Auth,
 ) -> Result<CoapResponse> {
-    let (domain, port, path, queries) = parse_coap_url(format!("{}/v1/{}",url,channel))?;
+    let (domain, port, path, queries) = parse_coap_url(format!("{}/v1/{}", url, channel))?;
 
     let mut b64: String = String::new();
     if let Auth::UsernamePassword(uname, passwd) = auth {
@@ -32,12 +32,15 @@ pub fn get(
     packet
         .message
         .add_option(CoapOption::Unknown(4209), auth_header);
-    
+
     if let Some(p) = payload {
         packet.message.payload = p;
-    } 
+    }
 
-    let mut p = serde_urlencoded::to_string(params).unwrap().as_bytes().to_vec();
+    let mut p = serde_urlencoded::to_string(params)
+        .unwrap()
+        .as_bytes()
+        .to_vec();
     packet.message.add_option(CoapOption::UriQuery, p.clone());
 
     if let Some(mut q) = queries {
@@ -46,16 +49,20 @@ pub fn get(
         packet.message.add_option(CoapOption::UriQuery, q);
     }
 
-    println!("{:#?}", packet);
+    log::debug!("{:#?}", packet);
 
     let client = CoAPClient::new((domain.as_str(), port))?;
-    client.send(&packet)?;
 
-    client.set_receive_timeout(Some(Duration::new(35, 0)))?;
-    match client.receive() {
-        Ok(receive_packet) => Ok(receive_packet),
-        Err(e) => Err(e),
-    }
+    tokio::task::spawn_blocking(move || {
+        client.send(&packet)?;
+        client.set_receive_timeout(Some(Duration::new(35, 0)))?;
+
+        match client.receive() {
+            Ok(receive_packet) => Ok(receive_packet),
+            Err(e) => Err(e),
+        }
+    })
+    .await?
 }
 
 fn parse_coap_url(url: String) -> Result<(String, u16, String, Option<Vec<u8>>)> {

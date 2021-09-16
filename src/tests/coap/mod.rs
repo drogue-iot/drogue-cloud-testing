@@ -108,6 +108,7 @@ async fn test_single_coap_to_mqtt_message(
             data.params,
             data.payload,
         )
+        .await
         .expect("CoAP call to succeed");
 
     assert_eq!(response.get_status().clone(), ResponseType::Changed);

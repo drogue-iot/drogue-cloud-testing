@@ -85,13 +85,15 @@ async fn test_single_coap_command(
     // start telemetry
 
     let sender = CoapSender::new(&info);
-    let telemetry = sender.send(
-        channel,
-        auth,
-        "application/octet-stream".into(),
-        params,
-        payload,
-    );
+    let telemetry = sender
+        .send(
+            channel,
+            auth,
+            "application/octet-stream".into(),
+            params,
+            payload,
+        )
+        .await;
 
     let command = async {
         let client = reqwest::ClientBuilder::new()

@@ -248,8 +248,9 @@ dependencies = [
 
 [[package]]
 name = "coap"
-version = "0.10.0"
-source = "git+https://github.com/pranav-bhatt/coap-rs.git#803f25d70da6bcab65dc189d2dfd9b5f3c26616d"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "919970c5337194513a76b2154b344c2ad06d491e4107297673f2b39936064e80"
 dependencies = [
  "bytes 1.0.1",
  "coap-lite",
@@ -267,9 +268,9 @@ dependencies = [
 
 [[package]]
 name = "coap-lite"
-version = "0.4.1"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d15e8642b7913b70e905e3d9bc1e01ff25ddcb650344d83e90ebbba9d2a4e03b"
+checksum = "c7eafc0a93e6a6b76a58bc80278e497a182fcc9e62b8fbcccff702c5d76f5350"
 
 [[package]]
 name = "concurrent-queue"

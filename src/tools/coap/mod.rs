@@ -17,7 +17,7 @@ impl CoapSender {
         }
     }
 
-    pub fn send(
+    pub async fn send(
         &self,
         channel: String,
         auth: Auth,
@@ -27,8 +27,8 @@ impl CoapSender {
     ) -> anyhow::Result<CoapResponse> {
         let url = self.coap_url.to_string();
 
-        println!("Client request: {}", url);
+        log::debug!("Client request: {}", url);
 
-        Ok(helper::get(url, channel, content_type, params, payload, auth).unwrap())
+        Ok(helper::get(url, channel, content_type, params, payload, auth).await?)
     }
 }
