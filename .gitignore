@@ -4,3 +4,7 @@ Gemfile.lock
 .jekyll-cache/
 _site/
 .idea/
+release/
+download/
+drogue-cloud/
+screenshots/
