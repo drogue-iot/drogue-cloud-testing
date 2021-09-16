@@ -5,8 +5,6 @@ use fantoccini::Locator;
 use serde_json::Value;
 use std::io::Write;
 use std::process::Stdio;
-use std::thread::sleep;
-use std::time::Duration;
 use std::{ffi::OsStr, process::Command};
 
 const CONTEXT: &str = "system-tests";
@@ -44,9 +42,8 @@ impl Drg {
         // go to the login page
         c.goto(console).await?;
 
-        sleep(Duration::from_secs(2));
-
-        c.find(Locator::Css("button.pf-c-button.pf-m-primary"))
+        c.wait()
+            .for_element(Locator::Css("button.pf-c-button.pf-m-primary"))
             .await?
             .click()
             .await?;
@@ -59,15 +56,14 @@ impl Drg {
             .submit()
             .await?;
 
-        sleep(Duration::from_secs(2));
+        c.wait().for_element(Locator::Id("user-dropdown")).await?;
 
         // go to the token page
         c.goto(&format!("{}/token", console)).await?;
 
-        sleep(Duration::from_secs(2));
-
         let refresh_token = c
-            .find(Locator::Css("input.pf-c-form-control"))
+            .wait()
+            .for_element(Locator::Css("input.pf-c-form-control"))
             .await?
             .prop("value")
             .await?
@@ -80,6 +76,10 @@ impl Drg {
         let drg = Self::new();
         drg.delete_context().ok();
         drg.login(config.api.to_string(), &refresh_token)?;
+
+        // close window
+
+        c.close_window().await?;
 
         // return result
 

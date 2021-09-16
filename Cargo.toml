@@ -27,7 +27,7 @@ async-std = "1"
 
 futures = "0.3"
 
-fantoccini = "0.17.4"
+fantoccini = "0.17.5"
 
 tempfile = "3"
 base64 = "0.13"
