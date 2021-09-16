@@ -77,17 +77,20 @@ async fn test_single_http_command(
     .await
     .expect("MQTT receiver started");
 
-    // TODO: warm up the receiver with messages instead of waiting
-
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    let mqtt = mqtt
+        .warmup(
+            HttpWarmup::new(ctx, &device, &auth).await?,
+            Duration::from_secs(30),
+        )
+        .await?;
 
     // start telemetry
 
     let sender = HttpSender::new(&info, ctx);
     let telemetry = sender.send(
         channel,
-        auth,
-        "application/octet-stream".into(),
+        &auth,
+        Some("application/octet-stream".into()),
         params,
         payload,
     );

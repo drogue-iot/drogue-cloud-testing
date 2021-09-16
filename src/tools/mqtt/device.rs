@@ -1,11 +1,11 @@
 use super::*;
-use crate::context::TestContext;
-use crate::tools::tls;
 use crate::{
+    context::TestContext,
     init::info::Information,
-    tools::{messages::WaitForMessages, Auth},
+    tools::{messages::WaitForMessages, tls, Auth},
 };
 use anyhow::{anyhow, Context};
+use async_trait::async_trait;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -139,8 +139,9 @@ impl MqttDevice {
     }
 }
 
+#[async_trait]
 impl WaitForMessages for MqttDevice {
-    fn num_messages(&self) -> usize {
+    async fn num_messages(&self) -> usize {
         self.dispatcher
             .lock()
             .map_or(0, |m| m.receiver_map.iter().map(|(_, v)| v.len()).sum())

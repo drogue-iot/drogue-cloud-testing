@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     context::TestContext,
     init::token::TokenInjector,
-    tools::{messages::WaitForMessages, mqtt::MqttVersion},
+    tools::{messages::WaitForMessages, mqtt::MqttVersion, warmup::HttpWarmup},
 };
 use coap_lite::CoapOption;
 use rstest::{fixture, rstest};
@@ -74,9 +74,12 @@ async fn test_single_coap_command(
     .await
     .expect("MQTT receiver started");
 
-    // TODO: warm up the receiver with messages instead of waiting
-
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    let mqtt = mqtt
+        .warmup(
+            HttpWarmup::new(ctx, &device, &auth).await?,
+            Duration::from_secs(30),
+        )
+        .await?;
 
     // start telemetry
 

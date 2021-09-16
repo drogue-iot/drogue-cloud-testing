@@ -3,9 +3,10 @@ use crate::{
     init::token::TokenProvider,
     resources::apps::Application,
     tools::{
-        assert::{assert_msgs, Message},
+        assert::{assert_msgs, CloudMessage},
         messages::WaitForMessages,
         mqtt::{MqttDevice, MqttQoS, MqttReceiver, MqttVersion},
+        warmup::HttpWarmup,
         Auth,
     },
 };
@@ -83,9 +84,12 @@ async fn test_single_mqtt_to_mqtt_message(
 
     log::info!("Receiver created");
 
-    // FIXME: instead of just sleeping, we should try to warm up the channel with different events
-
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    let mqtt = mqtt
+        .warmup(
+            HttpWarmup::new(ctx, &device, &data.auth).await?,
+            Duration::from_secs(30),
+        )
+        .await?;
 
     // do some work
 
@@ -112,11 +116,11 @@ async fn test_single_mqtt_to_mqtt_message(
 
     // test for messages
 
-    let messages = mqtt.close();
+    let messages = mqtt.close().await;
 
     assert_msgs(
         &messages,
-        &vec![Message {
+        &vec![CloudMessage {
             subject: "telemetry".into(),
             r#type: "io.drogue.event.v1".into(),
             instance: "drogue".into(),

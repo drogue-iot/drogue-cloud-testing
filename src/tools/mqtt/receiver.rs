@@ -1,17 +1,20 @@
 use super::*;
-use crate::tools::{assert::Message, messages::WaitForMessages, tls};
+use crate::tools::{assert::CloudMessage, messages::WaitForMessages, tls, warmup::WarmupSender};
 use anyhow::Context;
+use async_std::sync::Mutex;
+use async_trait::async_trait;
 use futures::StreamExt;
 use serde_json::Value;
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex},
-    time::Duration,
+    fmt::{Debug, Formatter},
+    sync::Arc,
+    time::{Duration, SystemTime},
 };
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct MqttMessage {
     pub topic: String,
     pub user_properties: HashMap<String, String>,
@@ -19,15 +22,32 @@ pub struct MqttMessage {
     pub payload: Vec<u8>,
 }
 
+impl Debug for MqttMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut d = f.debug_struct("MqttMessage");
+
+        d.field("topic", &self.topic)
+            .field("content_type", &self.content_type)
+            .field("user_properties", &self.user_properties);
+
+        match String::from_utf8(self.payload.clone()) {
+            Ok(payload) => d.field("payload", &payload),
+            Err(_) => d.field("payload", &self.payload),
+        };
+
+        d.finish()
+    }
+}
+
 impl MqttMessage {
-    pub fn into_message(self, binary: bool) -> anyhow::Result<Message> {
+    pub fn into_message(self, binary: bool) -> anyhow::Result<CloudMessage> {
         match binary {
             true => self.into_message_binary(),
             false => self.into_message_structured(),
         }
     }
 
-    pub fn into_message_structured(self) -> anyhow::Result<Message> {
+    pub fn into_message_structured(self) -> anyhow::Result<CloudMessage> {
         if let Some(content_type) = self.content_type {
             if content_type.as_str() != "application/cloudevents+json; charset=utf-8" {
                 anyhow::bail!("Wrong content type: {}", content_type);
@@ -36,12 +56,13 @@ impl MqttMessage {
 
         let json: Value = serde_json::from_slice(&self.payload).context("Parse as JSON")?;
 
-        let payload = match json["data_base64"].as_str() {
-            Some(data) => base64::decode(data)?,
-            None => vec![],
+        let payload = match (json["data_base64"].as_str(), json["data"].as_object()) {
+            (Some(data), _) => base64::decode(data)?,
+            (_, Some(json)) => serde_json::to_vec(json)?,
+            (None, None) => vec![],
         };
 
-        Ok(Message {
+        Ok(CloudMessage {
             subject: json["subject"].as_str().unwrap_or_default().into(),
             r#type: json["type"].as_str().unwrap_or_default().into(),
             instance: json["instance"].as_str().unwrap_or_default().into(),
@@ -52,8 +73,8 @@ impl MqttMessage {
         })
     }
 
-    pub fn into_message_binary(self) -> anyhow::Result<Message> {
-        Ok(Message {
+    pub fn into_message_binary(self) -> anyhow::Result<CloudMessage> {
+        Ok(CloudMessage {
             subject: self
                 .user_properties
                 .get("subject")
@@ -99,7 +120,7 @@ impl From<paho_mqtt::Message> for MqttMessage {
 }
 
 pub struct MqttReceiver {
-    messages: Arc<Mutex<Vec<anyhow::Result<Message>>>>,
+    messages: Arc<Mutex<Vec<anyhow::Result<CloudMessage>>>>,
     _client: paho_mqtt::AsyncClient,
     _ctx: JoinHandle<()>,
 }
@@ -189,7 +210,8 @@ impl MqttReceiver {
             log::info!("Starting message stream...");
             // we don't reconnect
             while let Some(Some(msg)) = strm.next().await {
-                if let Ok(mut msgs) = strm_messages.lock() {
+                {
+                    let mut msgs = strm_messages.lock().await;
                     log::info!("Raw message: {:?}", msg);
                     let msg = MqttMessage::from(msg);
                     log::info!("Received: {:?}", msg);
@@ -206,19 +228,84 @@ impl MqttReceiver {
         })
     }
 
-    pub fn close(self) -> Vec<anyhow::Result<Message>> {
-        if let Ok(mut msgs) = self.messages.lock() {
-            msgs.drain(..).collect()
-        } else {
-            log::warn!("Unable to get messages");
-            vec![]
+    async fn drain_messages(&self) -> Vec<anyhow::Result<CloudMessage>> {
+        self.messages.lock().await.drain(..).collect()
+    }
+
+    pub async fn close(self) -> Vec<anyhow::Result<CloudMessage>> {
+        self.drain_messages().await
+    }
+
+    // Warms up the listener, to ensure we can receive data.
+    pub async fn warmup<S>(self, mut sender: S, timeout: Duration) -> anyhow::Result<Self>
+    where
+        S: WarmupSender,
+    {
+        let start = SystemTime::now();
+
+        let mut index = 0;
+
+        // first drain messages
+        self.drain_messages().await;
+
+        loop {
+            // start sending
+            sender.send(index).await?;
+
+            // sleep a bit
+            tokio::time::sleep(Duration::from_secs(1)).await;
+
+            // check if we have messages
+            if self.num_messages().await > 0 {
+                log::info!("Received first message after {} attempts", index);
+                break;
+            }
+
+            // check if we timed out
+            if SystemTime::now().duration_since(start)? > timeout {
+                log::info!("Timeout waiting for first warmup message");
+                anyhow::bail!("Unable to warm up listener: Timeout");
+            }
+
+            // next iteration, try again
+            index += 1;
         }
+
+        // we received messages, now read up to the most recent one sent (index)
+
+        'for_latest: loop {
+            let messages = self.drain_messages().await;
+
+            // iterate over all "ok" messages
+            for message in messages.into_iter().flatten() {
+                log::debug!("Received warmup message: {:?}", index);
+                if sender.identify(&message, index as u32) {
+                    log::info!("Received most recent messages ... warmed up!");
+                    // we identified the latest messages and can break the loop
+                    break 'for_latest;
+                }
+            }
+
+            // sleep a bit
+            tokio::time::sleep(Duration::from_secs(1)).await;
+
+            // check if we timed out
+            if SystemTime::now().duration_since(start)? > timeout {
+                log::info!("Timeout waiting for warmup cleanup");
+                anyhow::bail!("Unable to warm up listener: Timeout");
+            }
+
+            // check again
+        }
+
+        Ok(self)
     }
 }
 
+#[async_trait]
 impl WaitForMessages for MqttReceiver {
-    fn num_messages(&self) -> usize {
-        self.messages.lock().map_or(0, |m| m.len())
+    async fn num_messages(&self) -> usize {
+        self.messages.lock().await.len()
     }
 }
 

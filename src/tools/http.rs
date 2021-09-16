@@ -1,5 +1,4 @@
-use crate::init::info::Information;
-use crate::tools::Auth;
+use crate::{init::info::Information, tools::Auth};
 use std::collections::HashMap;
 use url::Url;
 
@@ -7,7 +6,7 @@ pub trait ClientBuilderProvider {
     fn new_client_builder(&self) -> anyhow::Result<reqwest::ClientBuilder>;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct HttpSender<'cb, CB>
 where
     CB: ClientBuilderProvider,
@@ -32,14 +31,14 @@ where
     pub async fn send(
         &self,
         channel: String,
-        auth: Auth,
-        content_type: String,
+        auth: &Auth,
+        content_type: Option<String>,
         params: HashMap<String, String>,
         payload: Option<Vec<u8>>,
     ) -> anyhow::Result<reqwest::Response> {
         let builder = self.client_builder.new_client_builder()?;
 
-        let builder = match &auth {
+        let builder = match auth {
             Auth::X509Certificate(cert) => {
                 let id = reqwest::Identity::from_pem(&cert)?;
                 builder.identity(id)
@@ -66,7 +65,9 @@ where
             Auth::X509Certificate(_) => request,
         };
 
-        request = request.header(reqwest::header::CONTENT_TYPE, content_type);
+        if let Some(content_type) = content_type {
+            request = request.header(reqwest::header::CONTENT_TYPE, content_type);
+        }
 
         if let Some(payload) = payload {
             request = request.body(payload);
