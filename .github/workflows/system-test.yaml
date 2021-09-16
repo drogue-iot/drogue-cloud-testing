@@ -295,7 +295,29 @@ jobs:
           # seems like this file has changed, try restoring
           git restore README.md
 
+      - name: Collect logs
+        if: failure()
+        run: |
+          mkdir logs
+          sudo journalctl > logs/journal.log
+          ./.github/scripts/collect_logs.sh logs/ drogue-iot
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs
+          path: logs
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: screenshots
+          path: screenshots
+
       - name: Publish test results
+        # this should be the last action, as it checks out a different branch
         if: always()
         run: |
           git config --global user.name "GitHub workflow"
@@ -317,27 +339,6 @@ jobs:
           else
             echo "No changes have been detected since last build, nothing to publish"
           fi
-
-      - name: Collect logs
-        if: failure()
-        run: |
-          mkdir logs
-          sudo journalctl > logs/journal.log
-          ./.github/scripts/collect_logs.sh logs/ drogue-iot
-
-      - name: Upload logs
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: logs
-          path: logs
-
-      - name: Upload screenshots
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: screenshots
-          path: screenshots
 
   destroy-runner:
     name: Destroy runner
