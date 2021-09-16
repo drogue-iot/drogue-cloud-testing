@@ -113,24 +113,32 @@ jobs:
 
       - name: Install drg
         run: |
+          mkdir -p download
+          cd download
           curl -sL https://github.com/drogue-iot/drg/releases/download/v0.5.1/drg-0.5.1-linux-amd64.tar.gz -o drg.tar.gz
           tar --strip-components=1 -xvzf drg.tar.gz
           mv drg "$HOME/.local/bin"
 
       - name: Install geckodriver
         run: |
+          mkdir -p download
+          cd download
           curl -sL https://github.com/mozilla/geckodriver/releases/download/v0.29.1/geckodriver-v0.29.1-linux64.tar.gz -o geckodriver.tar.gz
           tar -xzvf geckodriver.tar.gz
           mv geckodriver "$HOME/.local/bin"
 
       - name: Install helm
         run: |
+          mkdir -p download
+          cd download
           curl -sL https://get.helm.sh/helm-v3.6.0-linux-amd64.tar.gz -o helm.tar.gz
           tar xzf helm.tar.gz
           mv linux-amd64/helm "$HOME/.local/bin"
 
       - name: Install kubectl
         run: |
+          mkdir -p download
+          cd download
           curl -sL https://dl.k8s.io/release/v1.21.1/bin/linux/amd64/kubectl -o "$HOME/.local/bin/kubectl"
           chmod a+x "$HOME/.local/bin/kubectl"
 
@@ -297,10 +305,10 @@ jobs:
 
           cp test-output.md _posts/$(date "+%Y-%m-%d")-test-run-${GITHUB_RUN_ID}.md
 
-          git add -A
-          if ! git diff --cached --exit-code; then
+          git add -A -- _posts
+          if ! git diff --cached --exit-code -- _posts; then
             echo "Changes have been detected, commit and push ..."
-            git commit -am "Automatic update ($GITHUB_RUN_ID/$GITHUB_RUN_NUMBER)"
+            git commit -m "Automatic update ($GITHUB_RUN_ID/$GITHUB_RUN_NUMBER)"
             git log --graph --abbrev-commit --date=relative -n 5
             git push
           else
