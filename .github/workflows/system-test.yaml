@@ -81,6 +81,8 @@ jobs:
     steps:
 
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # required to switch branch later
 
       - uses: actions/cache@v2
         with:
