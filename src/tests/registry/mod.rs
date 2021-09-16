@@ -49,7 +49,6 @@ async fn test_registry_create_and_delete(ctx: &mut TestContext) {
         .expect_ready();
     drg.delete_app(&uuid).expect("Deleted application");
 
-    // currently deleting a non-existent app returns an error
     let r = drg.delete_app(&uuid);
     assert!(r.is_err());
 

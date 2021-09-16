@@ -91,7 +91,7 @@ async fn test_single_coap_to_mqtt_message(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::new(ctx, &device, &data.auth).await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, data.params.clone()).await?,
             Duration::from_secs(30),
         )
         .await?;

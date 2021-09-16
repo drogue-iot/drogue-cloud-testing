@@ -50,8 +50,9 @@ async fn test_single_http_command(
     log::info!("Sending payload");
 
     // add the command timeout
-    let mut params = data.params;
+    let mut params = data.params.clone();
     params.insert("ct".into(), "5000".into());
+    let warmup_params = data.params;
 
     // send the telemetry message
 
@@ -79,7 +80,7 @@ async fn test_single_http_command(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::new(ctx, &device, &auth).await?,
+            HttpWarmup::with_params(ctx, &device, &auth, warmup_params).await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -91,7 +92,7 @@ async fn test_single_http_command(
         channel,
         &auth,
         Some("application/octet-stream".into()),
-        params,
+        &params,
         payload,
     );
 

@@ -33,7 +33,7 @@ where
         channel: String,
         auth: &Auth,
         content_type: Option<String>,
-        params: HashMap<String, String>,
+        params: &HashMap<String, String>,
         payload: Option<Vec<u8>>,
     ) -> anyhow::Result<reqwest::Response> {
         let builder = self.client_builder.new_client_builder()?;
