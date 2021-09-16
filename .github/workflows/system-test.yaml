@@ -302,6 +302,9 @@ jobs:
           git config --global user.email 'ctron@users.noreply.github.com'
 
           git checkout gh-pages
+          # update before modifying
+          git fetch
+          git rebase origin/gh-pages
 
           cp test-output.md _posts/$(date "+%Y-%m-%d")-test-run-${GITHUB_RUN_ID}.md
 
