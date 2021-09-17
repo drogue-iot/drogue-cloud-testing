@@ -1,10 +1,12 @@
 use super::*;
 use crate::{
+    common::setup,
     context::TestContext,
     init::token::TokenInjector,
     tools::{messages::WaitForMessages, mqtt::MqttVersion, warmup::HttpWarmup},
 };
 use coap_lite::CoapOption;
+use futures::join;
 use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::Uuid;
@@ -22,6 +24,7 @@ async fn test_command(
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
 ) -> anyhow::Result<()> {
+    setup();
     let app = Uuid::new_v4().to_string();
     test_single_coap_command(&mut ctx, version, TestData::simple(&app, "device1")).await
 }
@@ -85,15 +88,13 @@ async fn test_single_coap_command(
     // start telemetry
 
     let sender = CoapSender::new(&info);
-    let telemetry = sender
-        .send(
-            channel,
-            auth,
-            "application/octet-stream".into(),
-            params,
-            payload,
-        )
-        .await;
+    let telemetry = sender.send(
+        channel,
+        auth,
+        "application/octet-stream".into(),
+        params,
+        payload,
+    );
 
     let command = async {
         let client = reqwest::ClientBuilder::new()
@@ -126,9 +127,9 @@ async fn test_single_coap_command(
         Ok::<_, anyhow::Error>(command)
     };
 
-    let command = command.await;
+    let (telemetry, command) = join!(telemetry, command);
 
-    let telemetry = telemetry.expect("Failed to get CoAP response");
+    let telemetry = telemetry.expect("Failed to get telemetry response");
     let command = command.expect("Failed to get command response");
 
     // we must wait for the MQTT message to arrive … that is the right time to send off the command
@@ -139,6 +140,8 @@ async fn test_single_coap_command(
     let command = command.text().await;
     assert!(command.is_ok());
     assert_eq!(command.unwrap(), "");
+
+    // assert telemetry response
 
     assert_eq!(telemetry.get_status().clone(), ResponseType::Content);
     assert_eq!(
