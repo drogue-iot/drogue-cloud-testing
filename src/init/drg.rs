@@ -150,6 +150,7 @@ impl Drg {
         self.run(&["version"])
     }
 
+    #[allow(dead_code)]
     pub fn contexts_str(&self) -> anyhow::Result<String> {
         self.run(&["context", "list"])
     }
@@ -192,6 +193,7 @@ impl Drg {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_device(&self, app: &str, name: &str) -> anyhow::Result<serde_json::Value> {
         let json = self.run(&["get", "device", "--app", app, name])?;
         Ok(serde_json::from_str(&json)?)
