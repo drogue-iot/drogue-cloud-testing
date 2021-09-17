@@ -2,8 +2,7 @@ use super::*;
 use crate::{
     common::setup,
     context::TestContext,
-    init::token::TokenInjector,
-    tools::{messages::WaitForMessages, mqtt::MqttVersion},
+    tools::{command::send_http_command, messages::WaitForMessages, mqtt::MqttVersion},
 };
 use futures::join;
 use reqwest::header::HeaderValue;
@@ -97,34 +96,11 @@ async fn test_single_http_command(
     );
 
     let command = async {
-        let client = reqwest::ClientBuilder::new()
-            .danger_accept_invalid_certs(true)
-            .build()?;
-
         // wait for the MQTT message to arrive
-
         mqtt.wait_for_messages(1, Duration::from_secs(5)).await?;
 
-        // now we can send the command back
-
-        let mut command_url = info.command_url;
-        command_url.set_path(&format!(
-            "/api/command/v1alpha1/apps/{appId}/devices/{deviceId}",
-            appId = app.name(),
-            deviceId = device.name(),
-        ));
-        command_url.query_pairs_mut().append_pair("command", "SET");
-        let command = client
-            .post(command_url)
-            .inject_token(drg.clone())
-            .await?
-            .json(&json!({
-                "set-command": "foo",
-            }))
-            .send()
-            .await?;
-
-        Ok::<_, anyhow::Error>(command)
+        // then send the command
+        send_http_command(&info, &drg, &app, &device).await
     };
 
     let (telemetry, command) = join!(telemetry, command);

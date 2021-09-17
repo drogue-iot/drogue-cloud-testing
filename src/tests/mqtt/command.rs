@@ -1,10 +1,8 @@
 use super::*;
 use crate::{
     context::TestContext,
-    init::token::TokenInjector,
-    tools::{messages::WaitForMessages, mqtt::MqttVersion},
+    tools::{command::send_http_command, messages::WaitForMessages, mqtt::MqttVersion},
 };
-use anyhow::Context;
 use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::Uuid;
@@ -41,35 +39,18 @@ async fn test_single_mqtt_command(
         .create_device(data.device, &data.spec)
         .expect("Create new device");
 
-    // send telemetry (with command time out)
-
     log::info!("Sending payload");
 
-    // send the telemetry message
+    // subscribe to commands, we don't need to send telemetry here
 
     let mut mqtt = MqttDevice::new(&info, data.auth, version, ctx).await?;
     mqtt.subscribe_commands()
         .await
         .expect("MQTT publish to succeed");
 
-    let client = ctx.client().await.context("Get HTTP client")?;
+    // send the http command
 
-    let mut command_url = info.command_url;
-    command_url.set_path(&format!(
-        "/api/command/v1alpha1/apps/{appId}/devices/{deviceId}",
-        appId = app.name(),
-        deviceId = device.name(),
-    ));
-    command_url.query_pairs_mut().append_pair("command", "SET");
-    let command = client
-        .post(command_url)
-        .inject_token(drg.clone())
-        .await?
-        .json(&json!({
-            "set-command": "foo",
-        }))
-        .send()
-        .await?;
+    let command = send_http_command(&info, &drg, &app, &device).await?;
 
     // assert command response
 
