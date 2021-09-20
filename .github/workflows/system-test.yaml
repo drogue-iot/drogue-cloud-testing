@@ -154,7 +154,7 @@ jobs:
 
       - name: Install markdown-test-report
         run: |
-          cargo install --git https://github.com/ctron/markdown-test-report.git
+          cargo install --force --git https://github.com/ctron/markdown-test-report.git
 
       # get the content to test
 
