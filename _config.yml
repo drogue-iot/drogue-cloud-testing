@@ -11,7 +11,8 @@ url: https://drogue-iot.github.io
 baseurl: /drogue-cloud-testing
 encoding: utf-8
 
-theme: minima
+#theme: minima
+theme: jekyll-theme-chirpy
 
 show_excerpts: true
 
@@ -19,4 +20,3 @@ minima:
   social_links:
     twitter: DrogueIoT
     github: drogue-iot
-
