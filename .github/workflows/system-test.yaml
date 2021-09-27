@@ -1,5 +1,10 @@
 name: System Test
 on:
+
+  schedule:
+    # Run a test every monday 6 am
+    - cron: '0 6 * * 1'
+
   workflow_dispatch:
     inputs:
       releaseUrl:
@@ -20,6 +25,25 @@ on:
 
 jobs:
 
+  init:
+    name: Initialize
+    runs-on: ubuntu-20.04
+
+    steps:
+
+      - name: Cluster type
+        if: ${{ !github.event.inputs.cluster || github.event.inputs.cluster == 'kind' }}
+        run: |
+          echo "Using kind"
+          echo "::set-output name=cluster::kind"
+
+      - name: Using Minikube
+        if: ${{ github.event.inputs.cluster == 'minikube' }}
+        run: |
+          echo "Using Minikube"
+          echo "::set-output name=cluster::minikube"
+
+
   create-runner:
     name: Create runner
     runs-on: ubuntu-20.04
@@ -37,6 +61,8 @@ jobs:
         env:
           HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.API_PAT }}
+          SERVER_TYPE: ${{ github.event.inputs.serverType }}
+
         run: |
           RUNNER_URL=$(gh api repos/drogue-iot/drogue-cloud-testing/actions/runners/downloads --jq '.[] | select(.os=="linux" and .architecture=="x64") | .download_url')
           TOKEN=$(gh api -X POST repos/${{ github.repository }}/actions/runners/registration-token --template '{{ .token }}')
@@ -48,7 +74,7 @@ jobs:
 
           cat init.yaml
 
-          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-20.04 --type "${{github.event.inputs.serverType}}" --ssh-key 3746242 --user-data-from-file init.yaml
+          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-20.04 --type "${SERVER_TYPE:-ccx22}" --ssh-key 3746242 --user-data-from-file init.yaml
 
       - name: Waiting for runner to become ready
         id: runner
@@ -73,9 +99,10 @@ jobs:
 
     needs:
       - create-runner
+      - init
 
     env:
-      CLUSTER: ${{ github.event.inputs.cluster }}
+      CLUSTER: ${{ needs.init.outputs.cluster }}
       DEBIAN_FRONTEND: noninteractive
 
     steps:
@@ -143,7 +170,7 @@ jobs:
           chmod a+x "$HOME/.local/bin/kubectl"
 
       - name: Install Minikube
-        if: ${{ github.event.inputs.cluster == 'minikube' }}
+        if: ${{ needs.init.outputs.cluster == 'minikube' }}
         run: |
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/bin/minikube
@@ -205,7 +232,7 @@ jobs:
           mkdir release
           cd release
           ls ../drogue-cloud/installer/build
-          tar  --strip-components=1 -xvzf ../drogue-cloud/installer/build/drogue-install-${{ github.event.inputs.cluster }}-latest.tar.gz
+          tar  --strip-components=1 -xvzf ../drogue-cloud/installer/build/drogue-install-${CLUSTER:-kind}-latest.tar.gz
           cd ..
 
       - name: Check for installer script
@@ -216,7 +243,7 @@ jobs:
       # start the cluster
 
       - name: Create Kind cluster
-        if: ${{ github.event.inputs.cluster == 'kind' }}
+        if: ${{ needs.init.outputs.cluster == 'kind' }}
         uses: helm/kind-action@v1.2.0
         with:
           wait: 300s
@@ -224,11 +251,11 @@ jobs:
           config: kind/cluster-config.yaml
 
       - name: Load images in kind
-        if: ${{ ( github.event.inputs.releaseUrl == '' ) && ( github.event.inputs.cluster == 'kind' ) }}
+        if: ${{ ( github.event.inputs.releaseUrl == '' ) && ( needs.init.outputs.cluster == 'kind' ) }}
         run: make -C drogue-cloud kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
 
       - name: Create Minikube cluster
-        if: ${{ github.event.inputs.cluster == 'minikube' }}
+        if: ${{ needs.init.outputs.cluster == 'minikube' }}
         run: |
           minikube config set driver kvm2
           # the "start" call should align with what we have in the defaults
@@ -263,7 +290,7 @@ jobs:
       # Run tests
 
       - name: Run tests
-        run: xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ github.event.inputs.cluster }} CERT_BASE="release/build/certs" > test-output.json
+        run: xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ needs.init.outputs.cluster }} CERT_BASE="release/build/certs" > test-output.json
 
       # using tee combined with the xvfb-run swallows up the error response, even though "pipefail" is enabled
       - run: cat test-output.json
