@@ -31,7 +31,7 @@ jobs:
 
     steps:
 
-      - name: Cluster type
+      - name: Using Kind
         if: ${{ !github.event.inputs.cluster || github.event.inputs.cluster == 'kind' }}
         run: |
           echo "Using kind"
