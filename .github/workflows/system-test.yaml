@@ -29,19 +29,18 @@ jobs:
     name: Initialize
     runs-on: ubuntu-20.04
 
+    outputs:
+      cluster: ${{ steps.clusterType }}
+
     steps:
 
-      - name: Setting default cluster type
-        if: ${{ !github.event.inputs.cluster }}
+      - id: clusterType
+        name: Evaluate cluster type
+        env:
+          CLUSTER: ${{ github.event.inputs.cluster }}
         run: |
-          echo "Using kind"
-          echo "::set-output name=cluster::kind"
+          echo "::set-output name=cluster::${CLUSTER:-kind}"
 
-      - name: Using provided cluster type
-        if: ${{ github.event.inputs.cluster != '' }}
-        run: |
-          echo "Using ${{ github.event.inputs.cluster }}"
-          echo "::set-output name=cluster::${{ github.event.inputs.cluster }}"
 
   create-runner:
     name: Create runner
