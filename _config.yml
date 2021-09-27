@@ -11,10 +11,14 @@ url: https://drogue-iot.github.io
 baseurl: /drogue-cloud-testing
 encoding: utf-8
 
-#theme: minima
-theme: jekyll-theme-chirpy
+theme: minima
 
 show_excerpts: true
+
+plugins:
+  - jekyll-feed
+  - jekyll-gist
+  - jekyll-paginate
 
 minima:
   social_links:
