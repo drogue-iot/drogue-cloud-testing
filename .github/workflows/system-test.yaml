@@ -31,18 +31,17 @@ jobs:
 
     steps:
 
-      - name: Using Kind
-        if: ${{ !github.event.inputs.cluster || github.event.inputs.cluster == 'kind' }}
+      - name: Setting default cluster type
+        if: ${{ !github.event.inputs.cluster }}
         run: |
           echo "Using kind"
           echo "::set-output name=cluster::kind"
 
-      - name: Using Minikube
-        if: ${{ github.event.inputs.cluster == 'minikube' }}
+      - name: Using provided cluster type
+        if: ${{ github.event.inputs.cluster != '' }}
         run: |
-          echo "Using Minikube"
-          echo "::set-output name=cluster::minikube"
-
+          echo "Using ${{ github.event.inputs.cluster }}"
+          echo "::set-output name=cluster::${{ github.event.inputs.cluster }}"
 
   create-runner:
     name: Create runner
@@ -109,6 +108,7 @@ jobs:
 
       - run: |
           echo "Cluster type: ${{ needs.init.outputs.cluster }}"
+          echo "::notice title=Cluster type::${{ needs.init.outputs.cluster }}"
 
       - uses: actions/checkout@v2
         with:
