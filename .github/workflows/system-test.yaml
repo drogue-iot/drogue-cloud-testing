@@ -206,7 +206,8 @@ jobs:
 
       - name: Install markdown-test-report
         run: |
-          cargo install markdown-test-report
+          # it already exists in the cached target folder, so we force the installation
+          cargo install --force markdown-test-report
 
       # get the content to test
 
