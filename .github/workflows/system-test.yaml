@@ -11,10 +11,10 @@ on:
         description: The URL to the release file. An empty URL performs a build of 'main' first.
         required: false
       localBuildRepo:
-        description: The Git repository used when a local build is required.
+        description: The Git repository used when a local build is required (defaults to drogue-iot/drogue-cloud).
         required: false
       localBuildRef:
-        description: The Git ref (tag/branch/sha) used when a local build is required.
+        description: The Git ref (tag/branch/sha) used when a local build is required (defaults to main).
         required: false
       containerRegistry:
         description: The container registry prefix
