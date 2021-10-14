@@ -10,6 +10,12 @@ on:
       releaseUrl:
         description: The URL to the release file. An empty URL performs a build of 'main' first.
         required: false
+      localBuildRepo:
+        description: The Git repository used when a local build is required.
+        required: false
+      localBuildRef:
+        description: The Git ref (tag/branch/sha) used when a local build is required.
+        required: false
       containerRegistry:
         description: The container registry prefix
         required: false
@@ -31,6 +37,9 @@ jobs:
 
     outputs:
       cluster: ${{ steps.clusterType.outputs.cluster }}
+      buildRepo: ${{ steps.localBuild.outputs.buildRepo }}
+      buildRef: ${{ steps.localBuild.outputs.buildRef }}
+      needBuild: ${{ steps.needBuild.outputs.needBuild }}
 
     steps:
 
@@ -40,6 +49,20 @@ jobs:
           CLUSTER: ${{ github.event.inputs.cluster }}
         run: |
           echo "::set-output name=cluster::${CLUSTER:-kind}"
+
+      - id: needBuild
+        name: Evaluate if we need a local build
+        run: |
+          echo "::set-output name=needBuild::${{ github.event.inputs.releaseUrl == '' }}"
+
+      - id: localBuild
+        name: Evaluate local build information
+        env:
+          GIT_REPO: ${{ github.event.inputs.localBuildRepo }}
+          GIT_REF: ${{ github.event.inputs.localBuildRef }}
+        run: |
+          echo "::set-output name=buildRepo::${GIT_REPO:-https://github.com/drogue-iot/drogue-cloud}"
+          echo "::set-output name=buildRef::${GIT_REF:-main}"
 
 
   create-runner:
@@ -188,7 +211,7 @@ jobs:
       # get the content to test
 
       - name: Download release
-        if: ${{ github.event.inputs.releaseUrl != '' }}
+        if: ${{ !needs.init.outputs.needBuild }}
         run: |
           mkdir release
           cd release
@@ -198,30 +221,29 @@ jobs:
           find .
 
       - name: Checkout for local build
-        if: ${{ github.event.inputs.releaseUrl == '' }}
+        if: ${{ needs.init.outputs.needBuild }}
         run: |
           git version
 
-          mkdir -p ~/.ssh
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-          git clone https://github.com/drogue-iot/drogue-cloud
+          git clone ${{ needs.init.outputs.buildRepo }} --branch ${{ needs.init.outputs.buildRef }}
 
           cd drogue-cloud
+
+          git log -1
 
           git config --file=.gitmodules submodule."helm-charts".url https://github.com/drogue-iot/drogue-cloud-helm-charts.git
           git submodule sync
           git submodule update --init
 
       - uses: actions/cache@v2
-        if: ${{ github.event.inputs.releaseUrl == '' }}
+        if: ${{ needs.init.outputs.needBuild }}
         with:
           path: |
             drogue-cloud/target/
           key: ${{ runner.os }}-cargo-drogue-${{ hashFiles('**/drogue-cloud/Cargo.lock') }}
 
       - name: Perform a local build
-        if: ${{ github.event.inputs.releaseUrl == '' }}
+        if: ${{ needs.init.outputs.needBuild }}
         run: |
           cd drogue-cloud
 
@@ -253,7 +275,7 @@ jobs:
           config: kind/cluster-config.yaml
 
       - name: Load images in kind
-        if: ${{ ( github.event.inputs.releaseUrl == '' ) && ( needs.init.outputs.cluster == 'kind' ) }}
+        if: ${{ needs.init.outputs.needBuild && ( needs.init.outputs.cluster == 'kind' ) }}
         run: make -C drogue-cloud kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
 
       - name: Create Minikube cluster
@@ -267,7 +289,7 @@ jobs:
       # Start deployment
 
       - name: Deploy Drogue (release build)
-        if: ${{ github.event.inputs.releaseUrl != '' }}
+        if: ${{ !needs.init.outputs.needBuild }}
         env:
           DEBUG: "true"
         run: |
@@ -277,7 +299,7 @@ jobs:
         timeout-minutes: 20
 
       - name: Deploy drogue (local build)
-        if: ${{ github.event.inputs.releaseUrl == '' }}
+        if: ${{ needs.init.outputs.needBuild }}
         env:
           TEST_CERTS_IMAGE: "dev.local/test-cert-generator:${{ github.run_id }}"
         run: |
@@ -296,18 +318,18 @@ jobs:
 
       # using tee combined with the xvfb-run swallows up the error response, even though "pipefail" is enabled
       - run: cat test-output.json
-        if: always()
+        if: ${{ always() }}
 
       - run: markdown-test-report
-        if: always()
+        if: ${{ always() }}
 
       - name: Convert test data
-        if: always()
+        if: ${{ always() }}
         run: |
           cat test-output.json | cargo2junit > results.xml
 
       - name: Upload raw test results
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: test-output
@@ -317,7 +339,7 @@ jobs:
             test-output.md
 
       - name: Revert changes
-        if: always()
+        if: ${{ always() }}
         run: |
           git status
           git diff
@@ -325,21 +347,21 @@ jobs:
           git restore README.md
 
       - name: Collect logs
-        if: failure()
+        if: ${{ failure() }}
         run: |
           mkdir logs
           sudo journalctl > logs/journal.log
           ./.github/scripts/collect_logs.sh logs/ drogue-iot
 
       - name: Upload logs
-        if: failure()
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v2
         with:
           name: logs
           path: logs
 
       - name: Upload screenshots
-        if: always()
+        if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: screenshots
@@ -347,7 +369,8 @@ jobs:
 
       - name: Publish test results
         # this should be the last action, as it checks out a different branch
-        if: always()
+        # TODO: publish test results in a different repository
+        if: ${{ always() }}
         run: |
           git config --global user.name "GitHub workflow"
           git config --global user.email 'ctron@users.noreply.github.com'
@@ -376,6 +399,7 @@ jobs:
       - test
     runs-on: ubuntu-20.04
     if: ${{ always() }} # the runner must always be deleted
+
     steps:
       - uses: 3bit/setup-hcloud@v1
 
@@ -393,7 +417,7 @@ jobs:
         if: ${{ always() }} # always remove
         env:
           GITHUB_TOKEN: ${{ secrets.API_PAT }}
-        # Although we have the runner ID in the create step, it may be that there is race condition between
+        # Although we have the runner ID in the create step, it may be that there is a race condition between
         # failing to detect the creation and destroying. So we try to find the runner now anyway.
         run: |
           for id in $(gh api repos/${{ github.repository }}/actions/runners --jq '.runners[] | select(.name=="testing-runner-${{github.run_id}}") | .id'); do
