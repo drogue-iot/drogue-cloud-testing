@@ -206,7 +206,7 @@ jobs:
 
       - name: Install markdown-test-report
         run: |
-          cargo install --force --git https://github.com/ctron/markdown-test-report.git
+          cargo install markdown-test-report
 
       # get the content to test
 
@@ -320,8 +320,14 @@ jobs:
       - run: cat test-output.json
         if: ${{ always() }}
 
-      - run: markdown-test-report
+      - name: Render test report
         if: ${{ always() }}
+        run: |
+          if [ "${{ needs.init.outputs.needBuild }}" == "true" ]; then
+            markdown-test-report --git drogue-cloud
+          else
+            markdown-test-report
+          fi
 
       - name: Convert test data
         if: ${{ always() }}
