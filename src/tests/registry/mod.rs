@@ -6,8 +6,6 @@ use uuid::Uuid;
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_registry_create_app(ctx: &mut TestContext) {
-    setup();
-
     let uuid = Uuid::new_v4().to_string();
 
     Application::new(ctx.drg().await.unwrap(), &uuid)
@@ -18,8 +16,6 @@ async fn test_registry_create_app(ctx: &mut TestContext) {
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_registry_create_app_twice(ctx: &mut TestContext) {
-    setup();
-
     let uuid = Uuid::new_v4().to_string();
 
     // first attempt must succeed
@@ -36,8 +32,6 @@ async fn test_registry_create_app_twice(ctx: &mut TestContext) {
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_registry_create_and_delete(ctx: &mut TestContext) {
-    setup();
-
     let drg = ctx.drg().await.unwrap();
 
     let uuid = Uuid::new_v4().to_string();
@@ -59,8 +53,6 @@ async fn test_registry_create_and_delete(ctx: &mut TestContext) {
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_registry_create_app_and_device(ctx: &mut TestContext) {
-    setup();
-
     let uuid = Uuid::new_v4().to_string();
 
     let app = Application::new(ctx.drg().await.unwrap(), &uuid)
@@ -79,8 +71,6 @@ async fn test_registry_create_app_and_device(ctx: &mut TestContext) {
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_registry_create_app_and_device_twice(ctx: &mut TestContext) {
-    setup();
-
     let uuid = Uuid::new_v4().to_string();
 
     let app = Application::new(ctx.drg().await.unwrap(), &uuid)
@@ -103,8 +93,6 @@ async fn test_registry_create_app_and_device_twice(ctx: &mut TestContext) {
 #[test_context(TestContext)]
 #[tokio::test]
 async fn test_registry_device_create_and_delete(ctx: &mut TestContext) {
-    setup();
-
     let drg = ctx.drg().await.unwrap();
 
     let uuid = Uuid::new_v4().to_string();
