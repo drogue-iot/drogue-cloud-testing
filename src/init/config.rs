@@ -26,4 +26,23 @@ impl Config {
             api,
         })
     }
+
+    pub async fn console(&self) -> anyhow::Result<String> {
+        // get endpoints
+
+        let endpoints: serde_json::Value =
+            reqwest::get(format!("{}.well-known/drogue-endpoints", self.api))
+                .await
+                .context("Failed to fetch endpoints")?
+                .json()
+                .await
+                .context("Failed to parse endpoints")?;
+        log::info!("Endpoints: {:#?}", endpoints);
+
+        let console = endpoints["console"]
+            .as_str()
+            .expect("Missing console endpoint");
+
+        Ok(console.to_string())
+    }
 }

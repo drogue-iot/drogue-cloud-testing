@@ -1,3 +1,4 @@
+mod api;
 mod coap;
 mod drg;
 mod http;

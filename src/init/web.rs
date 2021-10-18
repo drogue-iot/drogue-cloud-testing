@@ -74,6 +74,7 @@ mod test {
     use std::time::Duration;
     use test_context::test_context;
     use tokio::time::sleep;
+    use url::Url;
 
     #[test_context(TestContext)]
     #[tokio::test]
@@ -130,6 +131,10 @@ mod test {
             .expect("Must navigate to our homepage");
 
         sleep(Duration::from_millis(1000)).await;
+        web.wait()
+            .for_url(Url::parse("https://drogue.io").unwrap())
+            .await
+            .unwrap();
 
         let _current_url = web.current_url().await.expect("Failed to get current URL");
 

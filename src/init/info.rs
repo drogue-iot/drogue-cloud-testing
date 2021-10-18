@@ -8,6 +8,7 @@ use serde::Deserialize;
 #[derive(Clone, Debug, Deserialize)]
 pub struct Information {
     pub api: Url,
+    pub console: Url,
     pub http: UrlInformation,
     pub coap: UrlInformation,
     pub mqtt: HostPortInformation,
@@ -27,7 +28,7 @@ pub struct HostPortInformation {
 }
 
 impl Information {
-    pub async fn new<T>(client: reqwest::Client, config: Config, token: T) -> anyhow::Result<Self>
+    pub async fn new<T>(client: &reqwest::Client, config: Config, token: T) -> anyhow::Result<Self>
     where
         T: TokenProvider,
     {

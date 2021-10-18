@@ -103,10 +103,14 @@ impl TestContext {
             Ok(info.clone())
         } else {
             let info =
-                Information::new(self.client().await?, Config::new()?, self.drg().await?).await?;
+                Information::new(&self.client().await?, Config::new()?, self.drg().await?).await?;
             self.info = Some(info.clone());
             Ok(info)
         }
+    }
+
+    pub async fn config(&self) -> anyhow::Result<Config> {
+        Ok(Config::new()?)
     }
 
     /// Create the client builder

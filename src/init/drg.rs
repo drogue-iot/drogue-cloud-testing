@@ -1,6 +1,7 @@
 use crate::init::config::Config;
+use crate::init::login::login;
 use crate::init::web::WebDriver;
-use anyhow::{bail, Context};
+use anyhow::bail;
 use fantoccini::Locator;
 use serde_json::Value;
 use std::io::Write;
@@ -22,44 +23,13 @@ impl Drg {
 
         let config = Config::new()?;
 
-        // get endpoints
-
-        let endpoints: serde_json::Value =
-            reqwest::get(format!("{}.well-known/drogue-endpoints", config.api))
-                .await
-                .context("Failed to fetch endpoints")?
-                .json()
-                .await
-                .context("Failed to parse endpoints")?;
-        log::info!("Endpoints: {:#?}", endpoints);
-
-        let console = endpoints["console"]
-            .as_str()
-            .expect("Missing console endpoint");
-
         // get access token
 
-        // go to the login page
-        c.goto(console).await?;
-
-        c.wait()
-            .for_element(Locator::Css("button.pf-c-button.pf-m-primary"))
-            .await?
-            .click()
-            .await?;
-
-        let mut form = c.form(Locator::Id("kc-form-login")).await?;
-        form.set_by_name("username", &config.user)
-            .await?
-            .set_by_name("password", &config.password)
-            .await?
-            .submit()
-            .await?;
-
-        c.wait().for_element(Locator::Id("user-dropdown")).await?;
+        login(c, &config).await?;
 
         // go to the token page
-        c.goto(&format!("{}/token", console)).await?;
+        c.goto(&format!("{}/token", config.console().await?))
+            .await?;
 
         let refresh_token = c
             .wait()
