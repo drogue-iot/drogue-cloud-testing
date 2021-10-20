@@ -110,21 +110,35 @@ async fn test_single_http_command(
 
     // assert command response
 
-    assert!(command.status().is_success());
+    assert!(
+        command.status().is_success(),
+        "Sending the command was not a success"
+    );
     let command = command.text().await;
-    assert!(command.is_ok());
-    assert_eq!(command.unwrap(), "");
+    assert!(command.is_ok(), "The payload should be text");
+    assert_eq!(command.unwrap(), "", "The payload should be empty");
 
     // assert telemetry response
 
-    assert!(telemetry.status().is_success());
+    assert!(
+        telemetry.status().is_success(),
+        "Sending the telemetry was not a success"
+    );
     assert_eq!(
         telemetry.headers().get("Command"),
-        Some(&HeaderValue::from_str("SET")?)
+        Some(&HeaderValue::from_str("SET")?),
+        "The response command header value isn't correct"
     );
     let telemetry = telemetry.json::<serde_json::Value>().await;
-    assert!(telemetry.is_ok());
-    assert_eq!(telemetry.unwrap(), json!({"set-command": "foo"}));
+    assert!(
+        telemetry.is_ok(),
+        "The telemetry response payload is not JSON"
+    );
+    assert_eq!(
+        telemetry.unwrap(),
+        json!({"set-command": "foo"}),
+        "The command payload does not match"
+    );
 
     // done
 
