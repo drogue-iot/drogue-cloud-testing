@@ -130,9 +130,8 @@ mod test {
             .await
             .expect("Must navigate to our homepage");
 
-        sleep(Duration::from_millis(1000)).await;
         web.wait()
-            .for_url(Url::parse("https://drogue.io").unwrap())
+            .for_url(Url::parse("https://www.drogue.io").unwrap())
             .await
             .unwrap();
 
