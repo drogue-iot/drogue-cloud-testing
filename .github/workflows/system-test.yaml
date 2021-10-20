@@ -360,8 +360,9 @@ jobs:
           sudo journalctl > logs/journal.log
 
           kubectl get ns > logs/namespaces.log
-          for ns in drogue-iot; do
-            ./.github/scripts/collect_logs.sh logs/ "$ns"
+          for ns in $(kubectl get ns --no-headers -o=custom-columns=:metadata.name); do
+            mkdir -p "logs/$ns"
+            ./.github/scripts/collect_logs.sh "logs/$ns" "$ns"
           done
 
       - name: Upload logs
