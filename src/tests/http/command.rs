@@ -1,6 +1,5 @@
 use super::*;
 use crate::{
-    common::setup,
     context::TestContext,
     tools::{command::send_http_command, messages::WaitForMessages, mqtt::MqttVersion},
 };
