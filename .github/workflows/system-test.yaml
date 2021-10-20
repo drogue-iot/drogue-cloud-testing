@@ -358,7 +358,11 @@ jobs:
         run: |
           mkdir logs
           sudo journalctl > logs/journal.log
-          ./.github/scripts/collect_logs.sh logs/ drogue-iot
+
+          kubectl get ns > logs/namespaces.log
+          for ns in drogue-iot; do
+            ./.github/scripts/collect_logs.sh logs/ "$ns"
+          done
 
       - name: Upload logs
         if: ${{ failure() }}
