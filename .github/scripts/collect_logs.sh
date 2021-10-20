@@ -55,6 +55,10 @@ gather "secrets"
 gather "configmaps"
 gather "statefulsets"
 
+# Ingress
+
+gather "ingresses"
+
 # Keycloak
 
 gather "keycloaks"
