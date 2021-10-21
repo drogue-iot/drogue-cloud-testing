@@ -28,8 +28,8 @@ on:
         description: The server type to use (this value has a price attached!).
         default: ccx22
         required: true
-      prUrl:
-        description: A PR URL to report back to
+      prNr:
+        description: A PR number to report back to
         required: false
 
 jobs:
@@ -247,9 +247,14 @@ jobs:
         run: |
           git version
 
-          git clone ${{ needs.init.outputs.buildRepo }} --branch ${{ needs.init.outputs.buildRef }}
-
-          cd drogue-cloud
+          if [ -z "${{ github.event.inputs.prNr }}" ]; then
+            git clone ${{ needs.init.outputs.buildRepo }} --branch ${{ needs.init.outputs.buildRef }}
+            cd drogue-cloud
+          else
+            git clone ${{ needs.init.outputs.buildRepo }}
+            cd drogue-cloud
+            gh pr checkout "${{ github.event.inputs.prNr }}"
+          fi
 
           git log -1
 
@@ -401,9 +406,11 @@ jobs:
           path: screenshots
 
       - name: Append comment
-        if: ${{ always() && ( github.event.inputs.prUrl != '' ) }}
+        if: ${{ always() && ( github.event.inputs.prNr != '' ) }}
+        env:
+          GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
-          markdown-test-report --no-git --no-front-matter --summary --output - | gh pr comment "${{ github.event.inputs.prUrl }}" -F -
+          markdown-test-report --no-git --no-front-matter --summary --output - | gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F -
 
       - name: Publish test results
         # this should be the last action, as it checks out a different branch
