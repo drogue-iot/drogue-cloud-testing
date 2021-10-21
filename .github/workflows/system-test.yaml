@@ -131,6 +131,7 @@ jobs:
       - run: |
           echo "Cluster type: ${{ needs.init.outputs.cluster }}"
           echo "::notice title=Cluster type::${{ needs.init.outputs.cluster }}"
+          echo "::notice title=Test subject::${{ ( needs.init.outputs.needBuild && 'Local build' ) || concat('Released artifact: ', github.event.inputs.releaseUrl ) }}"
 
       - uses: actions/checkout@v2
         with:
