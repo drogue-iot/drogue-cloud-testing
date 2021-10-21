@@ -144,7 +144,7 @@ jobs:
       - run: |
           echo "Cluster type: ${{ needs.init.outputs.cluster }}"
           echo "::notice title=Cluster type::${{ needs.init.outputs.cluster }}"
-          echo "::notice title=Test subject::${{ ( needs.init.outputs.needBuild && 'Local build' ) || concat('Released artifact: ', github.event.inputs.releaseUrl ) }}"
+          echo "::notice title=Test subject::${{ ( needs.init.outputs.needBuild && 'Local build' ) || format('Released artifact: {0}', github.event.inputs.releaseUrl) }}"
 
       - run: |
           echo "REPORT_PAGE_ID=${{ needs.init.outputs.buildReportId }}" >> $GITHUB_ENV
