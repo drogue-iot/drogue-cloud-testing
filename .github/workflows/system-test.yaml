@@ -28,6 +28,9 @@ on:
         description: The server type to use (this value has a price attached!).
         default: ccx22
         required: true
+      prUrl:
+        description: A PR URL to report back to
+        required: false
 
 jobs:
 
@@ -396,6 +399,11 @@ jobs:
         with:
           name: screenshots
           path: screenshots
+
+      - name: Append comment
+        if: ${{ always() && ( github.event.inputs.prUrl != '' ) }}
+        run: |
+          markdown-test-report --no-git --no-front-matter --summary --output - | gh pr comment "${{ github.event.inputs.prUrl }}" -F -
 
       - name: Publish test results
         # this should be the last action, as it checks out a different branch
