@@ -29,7 +29,7 @@ on:
         default: ccx22
         required: true
       prNr:
-        description: A PR number to report back to
+        description: A PR number to build and report back to
         required: false
 
 jobs:
@@ -244,6 +244,8 @@ jobs:
 
       - name: Checkout for local build
         if: ${{ needs.init.outputs.needBuild }}
+        env:
+          GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
           git version
 
