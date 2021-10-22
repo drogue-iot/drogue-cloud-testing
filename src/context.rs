@@ -3,6 +3,8 @@ use crate::{
     init::{config::Config, drg::Drg, info::Information, web::WebDriver},
     tools::{http::ClientBuilderProvider, tls},
 };
+use drogue_client::openid::TokenProvider;
+use drogue_client::registry;
 use reqwest::ClientBuilder;
 use std::io::Write;
 use std::path::PathBuf;
@@ -96,6 +98,15 @@ impl TestContext {
             self.client = Some(client.clone());
             Ok(client)
         }
+    }
+
+    pub async fn registry<TP>(&mut self, provider: TP) -> anyhow::Result<registry::v1::Client<TP>>
+    where
+        TP: TokenProvider<Error = reqwest::Error>,
+    {
+        let client = self.client().await?;
+        let info = self.info().await?;
+        Ok(registry::v1::Client::new(client, info.api, provider))
     }
 
     pub async fn info(&mut self) -> anyhow::Result<Information> {

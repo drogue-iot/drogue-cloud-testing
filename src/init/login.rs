@@ -8,7 +8,8 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
     // go to the login page
     web.goto(&config.console().await?).await?;
 
-    if let Ok(_) = web.find(Locator::Id("user-dropdown")).await {
+    if web.find(Locator::Id("user-dropdown")).await.is_ok() {
+        log::info!("Early return, we are already logged in");
         // we are already logged in
         return Ok(());
     }
