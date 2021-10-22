@@ -412,7 +412,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
-          markdown-test-report --git drogue-cloud --no-front-matter --summary --output - | gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F -
+          ( markdown-test-report --git drogue-cloud --no-front-matter --summary --output - ; echo "**Report:** ${REPORT_PAGE_URL}" ) | gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F -
 
       - name: Publish test results
         # this should be the last action, as it checks out a different branch
