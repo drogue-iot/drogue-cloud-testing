@@ -11,7 +11,7 @@ pub async fn with_screenshot<T, E>(
             ctx.web()
                 .await
                 .expect("Web Driver")
-                .screenshot(format!("{}.png", name))
+                .screenshot(name)
                 .await
                 .ok();
             Err(err)

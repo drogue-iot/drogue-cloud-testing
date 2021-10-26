@@ -74,7 +74,7 @@ impl ApiKeyCreator for TestContext {
                 .await
                 .map(|key| ApiKey { username, key }),
             &format!(
-                "create_api_key_web_{}",
+                "create_api_key_web/{}",
                 COUNTER.fetch_add(1, Ordering::SeqCst)
             ),
             self,
