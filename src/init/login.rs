@@ -2,21 +2,28 @@ use crate::init::config::Config;
 use crate::init::web::WebDriver;
 use fantoccini::error::CmdError;
 use fantoccini::Locator;
+use std::time::Duration;
+use url::Url;
 
 /// ensure that the web driver is logged in to the console
 pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
+    let url = config.console().await?;
+
     // go to the login page
-    web.goto(&config.console().await?).await?;
+    web.goto(&url).await?;
 
-    if web.find(Locator::Id("user-dropdown")).await.is_ok() {
-        log::info!("Early return, we are already logged in");
-        // we are already logged in
-        return Ok(());
-    }
-
-    match web.find(Locator::Id("user-dropdown")).await {
-        Ok(_) => return Ok(()),
-        Err(CmdError::NoSuchElement(_)) => {
+    match web
+        .wait()
+        .at_most(Duration::from_secs(2))
+        .for_element(Locator::Id("user-dropdown"))
+        .await
+    {
+        Ok(_) => {
+            log::info!("Early return, we are already logged in");
+            return Ok(());
+        }
+        Err(CmdError::WaitTimeout) | Err(CmdError::NoSuchElement(_)) => {
+            log::info!("Performing console login");
             // continue
         }
         Err(err) => return Err(err.into()),
