@@ -2,7 +2,7 @@
 name = "drogue-cloud-tests"
 version = "0.5.0"
 authors = ["Jens Reimann <jreimann@redhat.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 log = "0.4"
