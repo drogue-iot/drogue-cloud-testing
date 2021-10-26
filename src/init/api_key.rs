@@ -1,5 +1,6 @@
 use crate::context::TestContext;
 use crate::init::{config::Config, login::login, web::WebDriver};
+use crate::tools::web::with_screenshot;
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
 use fantoccini::Locator;
@@ -58,14 +59,26 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
     key.ok_or_else(|| anyhow!("Missing API key"))
 }
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
 #[async_trait]
 impl ApiKeyCreator for TestContext {
     async fn create_api_key_web(&mut self) -> anyhow::Result<ApiKey> {
         let config = self.config().await?;
         let username = config.user.clone();
         let mut web = self.web().await?;
-        create_api_key_web(&mut web, &config)
-            .await
-            .map(|key| ApiKey { username, key })
+        with_screenshot(
+            create_api_key_web(&mut web, &config)
+                .await
+                .map(|key| ApiKey { username, key }),
+            &format!(
+                "create_api_key_web_{}",
+                COUNTER.fetch_add(1, Ordering::SeqCst)
+            ),
+            self,
+        )
+        .await
     }
 }
