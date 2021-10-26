@@ -9,9 +9,7 @@ use uuid::Uuid;
 async fn test_registry_create_app(ctx: &mut TestContext) {
     let uuid = Uuid::new_v4().to_string();
 
-    let key = ctx.create_api_key_web().await;
-    // collapsing this line with the next, creates a weird error
-    let key = key.expect("Acquire API key");
+    let key = ctx.create_api_key_web().await.expect("Acquire API key");
 
     let reg = ctx
         .registry(key.into_provider())
