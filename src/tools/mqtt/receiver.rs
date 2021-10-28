@@ -56,22 +56,7 @@ impl MqttMessage {
 
         let json: Value = serde_json::from_slice(&self.payload).context("Parse as JSON")?;
 
-        let payload = match (json["data_base64"].as_str(), json["data"].as_object()) {
-            (Some(data), _) => base64::decode(data)?,
-            (_, Some(json)) => serde_json::to_vec(json)?,
-            (None, None) => vec![],
-        };
-
-        Ok(CloudMessage {
-            subject: json["subject"].as_str().unwrap_or_default().into(),
-            r#type: json["type"].as_str().unwrap_or_default().into(),
-            instance: json["instance"].as_str().unwrap_or_default().into(),
-            app: json["application"].as_str().unwrap_or_default().into(),
-            device: json["device"].as_str().unwrap_or_default().into(),
-            sender: json["sender"].as_str().unwrap_or_default().into(),
-            content_type: json["datacontenttype"].as_str().map(|s| s.into()),
-            payload,
-        })
+        Ok(CloudMessage::from(json))
     }
 
     pub fn into_message_binary(self) -> anyhow::Result<CloudMessage> {

@@ -13,6 +13,7 @@ pub struct Information {
     pub coap: UrlInformation,
     pub mqtt: HostPortInformation,
     pub mqtt_integration: HostPortInformation,
+    pub websocket_integration: UrlInformation,
     pub command_url: Url,
 }
 
