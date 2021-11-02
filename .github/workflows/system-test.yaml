@@ -343,7 +343,7 @@ jobs:
       # Run tests
 
       - name: Run tests
-        run: xvfb-run --auto-servernum make -s test TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ needs.init.outputs.cluster }} CERT_BASE="release/build/certs" > test-output.json
+        run: xvfb-run --auto-servernum make -s test RUST_LOG=debug TEST_ARGS="-Z unstable-options --format json --report-time" CLUSTER=${{ needs.init.outputs.cluster }} CERT_BASE="release/build/certs" > test-output.json
 
       # using tee combined with the xvfb-run swallows up the error response, even though "pipefail" is enabled
       - run: cat test-output.json
