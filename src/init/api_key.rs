@@ -46,6 +46,9 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
 
     btn.click().await?;
 
+    // FIXME: add counter
+    web.screenshot("after-click").await?;
+
     let mut clp = web
         .wait()
         .for_element(Locator::Css(
