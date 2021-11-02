@@ -42,7 +42,8 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
 
         // timeout?
 
-        if end > Instant::now() {
+        if end < Instant::now() {
+            log::info!("Time out waiting for user dropdown of login button");
             anyhow::bail!("Found neither user dropdown nor login button");
         }
 
