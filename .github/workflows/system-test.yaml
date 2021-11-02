@@ -266,6 +266,9 @@ jobs:
           git submodule sync
           git submodule update --init
 
+          cd deploy/helm
+          git log -1
+
       - uses: actions/cache@v2
         if: ${{ needs.init.outputs.needBuild }}
         with:
