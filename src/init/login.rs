@@ -21,6 +21,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
         match web.find(Locator::Id("user-dropdown")).await {
             Ok(_) => {
                 // we are already logged in, return
+                log::info!("Already logged in");
                 return Ok(());
             }
             Err(CmdError::NoSuchElement(_)) => {}
@@ -34,6 +35,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
             .await
         {
             Ok(login_button) => {
+                log::info!("Found login button");
                 break login_button;
             }
             Err(CmdError::NoSuchElement(_)) => {}
