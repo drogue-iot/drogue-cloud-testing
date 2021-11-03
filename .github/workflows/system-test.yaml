@@ -293,6 +293,14 @@ jobs:
           tar  --strip-components=1 -xvzf ../drogue-cloud/installer/build/drogue-install-${CLUSTER:-kind}-latest.tar.gz
           cd ..
 
+      - name: Upload locally built installer
+        if: ${{ needs.init.outputs.needBuild }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: installer
+          path: |
+            drogue-cloud/installer/build/drogue-install-*-latest.tar.gz
+
       - name: Check for installer script
         run: |
           cd release
