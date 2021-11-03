@@ -430,7 +430,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
-          ( markdown-test-report --git drogue-cloud --no-front-matter --summary --output - ; echo "**Report:** ${REPORT_PAGE_URL}" ) | gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F -
+          if markdown-test-report --git drogue-cloud --no-front-matter --summary --output > "$RUNNER_TEMP/comment.md"; then
+            echo "**Report:** ${REPORT_PAGE_URL}" >> "$RUNNER_TEMP/comment.md"
+          else
+            echo "Test run finished, but did not create a test report: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$RUNNER_TEMP/comment.md"
+          fi
+          gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F "$RUNNER_TEMP/comment.md"
 
       - name: Publish test results
         # this should be the last action, as it checks out a different branch
@@ -453,11 +458,11 @@ jobs:
             git commit -m "Automatic update ($GITHUB_RUN_ID/$GITHUB_RUN_NUMBER)"
             git log --graph --abbrev-commit --date=relative -n 5
             git push
+
+            echo "::notice title=Test Report::${REPORT_PAGE_URL}"
           else
             echo "No changes have been detected since last build, nothing to publish"
           fi
-
-          echo "::notice title=Test Report::${REPORT_PAGE_URL}"
 
   destroy-runner:
     name: Destroy runner
