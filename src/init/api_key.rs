@@ -44,6 +44,8 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
 
     log::debug!("Got button ({:?}), clicking it ...", btn);
 
+    web.screenshot("create_api_key_web/before-click").await?;
+
     btn.click().await?;
 
     web.screenshot("create_api_key_web/after-click").await?;

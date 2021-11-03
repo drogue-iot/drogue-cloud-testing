@@ -66,5 +66,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
 
     web.wait().for_element(Locator::Id("user-dropdown")).await?;
 
+    log::info!("Login complete");
+
     Ok(())
 }

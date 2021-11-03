@@ -50,6 +50,9 @@ impl WebDriver {
             name.as_ref(),
             COUNTER.fetch_add(1, Ordering::SeqCst)
         );
+
+        log::info!("Creating screenshot: {}", name);
+
         let name = Path::new(&name);
 
         if let Some(parent) = name.parent() {
