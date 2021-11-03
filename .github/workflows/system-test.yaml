@@ -32,6 +32,9 @@ on:
         description: A PR number to build and report back to
         required: false
 
+env:
+  HCLOUD_VERSION: "1.28.1"
+
 jobs:
 
   init:
@@ -89,7 +92,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: 3bit/setup-hcloud@v1
         with:
-          hcloud-version: '1.28.1'
+          hcloud-version: ${{ env.HCLOUD_VERSION }}
 
       - name: Check hcloud binary
         env:
@@ -480,6 +483,8 @@ jobs:
 
     steps:
       - uses: 3bit/setup-hcloud@v1
+        with:
+          hcloud-version: ${{ env.HCLOUD_VERSION }}
 
       - name: Check hcloud binary
         env:
