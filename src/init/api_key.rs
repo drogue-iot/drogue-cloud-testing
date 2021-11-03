@@ -46,8 +46,7 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
 
     btn.click().await?;
 
-    // FIXME: add counter
-    web.screenshot("after-click").await?;
+    web.screenshot("create_api_key_web/after-click").await?;
 
     let mut clp = web
         .wait()
@@ -62,10 +61,6 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
     key.ok_or_else(|| anyhow!("Missing API key"))
 }
 
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
-
 #[async_trait]
 impl ApiKeyCreator for TestContext {
     async fn create_api_key_web(&mut self) -> anyhow::Result<ApiKey> {
@@ -76,10 +71,7 @@ impl ApiKeyCreator for TestContext {
             create_api_key_web(&mut web, &config)
                 .await
                 .map(|key| ApiKey { username, key }),
-            &format!(
-                "create_api_key_web/{}",
-                COUNTER.fetch_add(1, Ordering::SeqCst)
-            ),
+            "create_api_key_web",
             self,
         )
         .await

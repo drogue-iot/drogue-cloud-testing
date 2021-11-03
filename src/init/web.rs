@@ -5,6 +5,10 @@ use std::fs::{create_dir_all, write};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
 #[derive(Clone, Debug)]
 pub struct WebDriver {
     client: Client,
@@ -41,7 +45,11 @@ impl WebDriver {
     pub async fn screenshot<S: AsRef<str>>(&mut self, name: S) -> anyhow::Result<()> {
         let data = self.client.screenshot().await?;
 
-        let name = format!("screenshots/{}.png", name.as_ref());
+        let name = format!(
+            "screenshots/{}/{}.png",
+            name.as_ref(),
+            COUNTER.fetch_add(1, Ordering::SeqCst)
+        );
         let name = Path::new(&name);
 
         if let Some(parent) = name.parent() {
