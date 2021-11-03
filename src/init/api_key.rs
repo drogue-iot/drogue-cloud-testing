@@ -42,7 +42,7 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
         .await
         .context("Failed to wait for button to create API key")?;
 
-    log::debug!("Got button, clicking it ...");
+    log::debug!("Got button ({:?}), clicking it ...", btn);
 
     btn.click().await?;
 
