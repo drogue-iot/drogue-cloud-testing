@@ -348,9 +348,12 @@ jobs:
           cd release
           ./scripts/drgadm deploy \
             -m \
-            -s defaults.images.repository=dev.local \
-            -S defaults.images.tag=${{ github.run_id }} \
-            -s defaults.images.pullPolicy=Never
+            -s drogueCloudCore.defaults.images.repository=dev.local \
+            -S drogueCloudCore.defaults.images.tag=${{ github.run_id }} \
+            -s drogueCloudCore.defaults.images.pullPolicy=Never \
+            -s drogueCloudExamples.defaults.images.repository=dev.local \
+            -S drogueCloudExamples.defaults.images.tag=${{ github.run_id }} \
+            -s drogueCloudExamples.defaults.images.pullPolicy=Never
         timeout-minutes: 20
 
       # Run tests
