@@ -413,12 +413,16 @@ jobs:
             ./.github/scripts/collect_logs.sh "logs/$ns" "$ns"
           done
 
+      - name: Package logs
+        if: ${{ always() }}
+        run: tar czvf logs.tar.gz logs
+
       - name: Upload logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: logs
-          path: logs
+          path: logs.tar.gz
 
       - name: Upload screenshots
         if: ${{ always() }}
