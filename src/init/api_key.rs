@@ -4,6 +4,7 @@ use crate::tools::web::with_screenshot;
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
 use fantoccini::Locator;
+use std::time::Duration;
 
 #[derive(Clone, Debug)]
 pub struct ApiKey {
@@ -34,7 +35,11 @@ pub trait ApiKeyCreator {
 pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow::Result<String> {
     login(web, config).await?;
 
+    web.screenshot("create_api_key_web/before-goto").await?;
+
     web.goto("/keys").await?;
+
+    web.screenshot("create_api_key_web/after-goto").await?;
 
     let btn = web
         .wait()
@@ -45,6 +50,9 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
     log::debug!("Got button ({:?}), clicking it ...", btn);
 
     web.screenshot("create_api_key_web/before-click").await?;
+    // FIXME: try with a delay, to see if the still needs to be some event listener to be attached
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    web.screenshot("create_api_key_web/before-click-2").await?;
 
     btn.click().await?;
 
