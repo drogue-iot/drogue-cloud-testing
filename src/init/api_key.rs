@@ -50,7 +50,7 @@ pub async fn create_api_key_web(web: &mut WebDriver, config: &Config) -> anyhow:
     log::debug!("Got button ({:?}), clicking it ...", btn);
 
     web.screenshot("create_api_key_web/before-click").await?;
-    // FIXME: try with a delay, to see if the still needs to be some event listener to be attached
+    // FIXME: try with a delay, to see if the still needs some event listener to be attached
     tokio::time::sleep(Duration::from_secs(5)).await;
     web.screenshot("create_api_key_web/before-click-2").await?;
 
