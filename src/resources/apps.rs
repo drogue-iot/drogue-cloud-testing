@@ -34,8 +34,12 @@ impl Application {
     }
 
     pub fn expect_ready(self) -> Self {
-        self.wait_ready()
-            .unwrap_or_else(|_| panic!("Expect application '{}' to become ready", self.name));
+        self.wait_ready().unwrap_or_else(|err| {
+            panic!(
+                "Expect application '{}' to become ready: {}",
+                self.name, err
+            )
+        });
         self
     }
 
