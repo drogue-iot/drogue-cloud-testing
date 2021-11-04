@@ -439,7 +439,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
-          if markdown-test-report --git drogue-cloud --no-front-matter --summary --output > "$RUNNER_TEMP/comment.md"; then
+          if markdown-test-report --git drogue-cloud --no-front-matter --summary --output - > "$RUNNER_TEMP/comment.md"; then
             echo "**Report:** ${REPORT_PAGE_URL}" >> "$RUNNER_TEMP/comment.md"
           else
             echo "Test run finished, but did not create a test report: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$RUNNER_TEMP/comment.md"
