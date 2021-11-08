@@ -8,6 +8,7 @@ pub struct CloudMessage {
     pub instance: String,
     pub app: String,
     pub device: String,
+    pub sender: String,
     pub content_type: Option<String>,
     pub payload: Vec<u8>,
 }

@@ -1,12 +1,12 @@
 use coap::CoAPClient;
 use coap_lite::{CoapOption, CoapRequest, CoapResponse};
 use regex::Regex;
-use std::collections::HashMap;
 use std::io::{Error, ErrorKind, Result};
 use std::net::SocketAddr;
 use std::time::Duration;
-use url::Url;
+use url::{form_urlencoded, Url};
 
+use crate::tools::http::HttpSenderOptions;
 use crate::tools::Auth;
 
 /// Execute a single get request with a coap url and a specific timeout.
@@ -14,11 +14,11 @@ pub async fn get(
     url: String,
     channel: String,
     _content_type: String,
-    params: HashMap<String, String>,
+    options: &HttpSenderOptions,
     payload: Option<Vec<u8>>,
     auth: Auth,
 ) -> Result<CoapResponse> {
-    let (domain, port, path, queries) = parse_coap_url(format!("{}/v1/{}", url, channel))?;
+    let (domain, port, path) = parse_coap_url(format!("{}/v1/{}", url, channel))?;
 
     let mut b64: String = String::new();
     if let Auth::UsernamePassword(uname, passwd) = auth {
@@ -37,17 +37,11 @@ pub async fn get(
         packet.message.payload = p;
     }
 
-    let mut p = serde_urlencoded::to_string(params)
-        .unwrap()
-        .as_bytes()
-        .to_vec();
-    packet.message.add_option(CoapOption::UriQuery, p.clone());
+    let mut query = form_urlencoded::Serializer::new(String::new());
+    options.append_query(&mut query);
+    let p = query.finish();
 
-    if let Some(mut q) = queries {
-        p.append(&mut "&".as_bytes().to_vec());
-        p.append(&mut q);
-        packet.message.add_option(CoapOption::UriQuery, q);
-    }
+    packet.message.add_option(CoapOption::UriQuery, p.into());
 
     log::debug!("{:#?}", packet);
 
@@ -65,7 +59,7 @@ pub async fn get(
     .await?
 }
 
-fn parse_coap_url(url: String) -> Result<(String, u16, String, Option<Vec<u8>>)> {
+fn parse_coap_url(url: String) -> Result<(String, u16, String)> {
     let url_params = match Url::parse(url.as_str()) {
         Ok(url_params) => url_params,
         Err(_) => return Err(Error::new(ErrorKind::InvalidInput, "url error")),
@@ -78,17 +72,11 @@ fn parse_coap_url(url: String) -> Result<(String, u16, String, Option<Vec<u8>>)>
     };
     let host = Regex::new(r"^\[(.*?)]$")
         .unwrap()
-        .replace(&host, "$1")
+        .replace(host, "$1")
         .to_string();
 
-    let port = match url_params.port() {
-        Some(p) => p,
-        None => 5683,
-    };
-
+    let port = url_params.port().unwrap_or(5683);
     let path = url_params.path().to_string();
 
-    let queries = url_params.query().map(|q| q.as_bytes().to_vec());
-
-    return Ok((host.to_string(), port, path, queries));
+    Ok((host, port, path))
 }

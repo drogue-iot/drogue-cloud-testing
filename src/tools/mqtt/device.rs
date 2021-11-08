@@ -105,7 +105,7 @@ impl MqttDevice {
 
     pub async fn send(
         &self,
-        channel: String,
+        topic: String,
         qos: MqttQoS,
         content_type: String,
         payload: Option<Vec<u8>>,
@@ -114,7 +114,7 @@ impl MqttDevice {
         props.push_string(paho_mqtt::PropertyCode::ContentType, &content_type)?;
 
         let msg = paho_mqtt::MessageBuilder::new()
-            .topic(channel.to_string())
+            .topic(topic)
             .payload(payload.unwrap_or_default())
             .qos(qos.into())
             .properties(props);
@@ -123,10 +123,8 @@ impl MqttDevice {
     }
 
     /// Subscribe to the command topic
-    pub async fn subscribe_commands(&mut self) -> anyhow::Result<()> {
-        self.client
-            .subscribe("command/inbox/#", MqttQoS::QoS0.into())
-            .await?;
+    pub async fn subscribe_commands(&mut self, filter: &str) -> anyhow::Result<()> {
+        self.client.subscribe(filter, MqttQoS::QoS0.into()).await?;
         Ok(())
     }
 

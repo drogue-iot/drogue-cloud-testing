@@ -1,3 +1,4 @@
+use crate::tools::SendAs;
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -10,7 +11,7 @@ use crate::{
         Auth,
     },
 };
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::time::Duration;
 
 pub mod command;
@@ -22,26 +23,21 @@ pub struct TestData {
     device: String,
     spec: Value,
     auth: Auth,
+    send_as: SendAs,
     payload: Option<Vec<u8>>,
     content_type: Option<String>,
     channel: Option<String>,
+    expected: ExpectedOutcome,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ExpectedOutcome {
+    pub sender: Option<String>,
 }
 
 impl TestData {
     pub fn channel(&self) -> String {
         self.channel.clone().unwrap_or_else(|| "telemetry".into())
-    }
-
-    pub fn simple(app: &str) -> Self {
-        Self {
-            app: app.into(),
-            device: "device1".into(),
-            spec: json!({"credentials": {"credentials": [
-                { "pass": "foo" }
-            ]}}),
-            auth: Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
-            ..Default::default()
-        }
     }
 }
 
@@ -51,15 +47,14 @@ async fn test_single_mqtt_to_mqtt_message(
     qos: MqttQoS,
     endpoint_version: MqttVersion,
     integration_version: MqttVersion,
+    app: &Application,
     data: TestData,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app)
-        .expect("Create a new application")
-        .expect_ready();
+
     let device = app
         .create_device(data.device, &data.spec)
         .expect("Create new device");
@@ -86,22 +81,27 @@ async fn test_single_mqtt_to_mqtt_message(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, Default::default()).await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, &(&data.send_as).into()).await?,
             Duration::from_secs(30),
         )
         .await?;
 
     // do some work
 
-    log::info!("Sending payload");
+    let topic = match &data.send_as {
+        SendAs::Gateway { device } => format!("{}/{}", channel, device),
+        SendAs::Device => channel.clone(),
+    };
+
+    log::info!("Sending payload: {}", topic);
 
     MqttDevice::new(&info, data.auth, endpoint_version, ctx)
         .await?
         .send(
-            channel,
+            topic,
             qos,
             "application/octet-stream".into(),
-            data.payload,
+            data.payload.clone(),
         )
         .await
         .expect("MQTT publish to succeed");
@@ -121,13 +121,14 @@ async fn test_single_mqtt_to_mqtt_message(
     assert_msgs(
         &messages,
         &vec![CloudMessage {
-            subject: "telemetry".into(),
+            subject: channel,
             r#type: "io.drogue.event.v1".into(),
             instance: "drogue".into(),
             app: app.name().into(),
             device: device.name().into(),
+            sender: data.expected.sender.unwrap_or_else(|| device.name().into()),
             content_type: Some("application/octet-stream".into()),
-            payload: vec![],
+            payload: data.payload.unwrap_or_default(),
         }],
     );
 

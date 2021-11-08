@@ -20,3 +20,15 @@ impl Default for Auth {
         Self::None
     }
 }
+
+#[derive(Clone, Debug)]
+pub enum SendAs {
+    Device,
+    Gateway { device: String },
+}
+
+impl Default for SendAs {
+    fn default() -> Self {
+        Self::Device
+    }
+}

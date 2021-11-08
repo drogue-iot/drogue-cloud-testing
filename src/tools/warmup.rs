@@ -1,3 +1,4 @@
+use crate::tools::http::HttpSenderOptions;
 use crate::{
     context::TestContext,
     resources::devices::Device,
@@ -9,7 +10,6 @@ use crate::{
 };
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::collections::HashMap;
 
 #[async_trait]
 pub trait WarmupSender {
@@ -92,7 +92,7 @@ where
     sender: HttpSender<'w, CB>,
     device: &'w Device<'w>,
     auth: &'w Auth,
-    params: HashMap<String, String>,
+    options: &'w HttpSenderOptions,
 }
 
 impl<'w, CB> HttpWarmup<'w, CB>
@@ -103,30 +103,29 @@ where
         sender: HttpSender<'w, CB>,
         device: &'w Device<'w>,
         auth: &'w Auth,
-        params: HashMap<String, String>,
+        options: &'w HttpSenderOptions,
     ) -> Self {
         HttpWarmup {
             device,
             auth,
+            options,
             sender,
-            params,
         }
     }
 }
 
 impl<'w> HttpWarmup<'w, TestContext> {
-    // FIXME: we need a better way to hand over device alias information than "params"
     pub async fn with_params(
         ctx: &'w mut TestContext,
         device: &'w Device<'w>,
         auth: &'w Auth,
-        params: HashMap<String, String>,
+        options: &'w HttpSenderOptions,
     ) -> anyhow::Result<HttpWarmup<'w, TestContext>> {
         Ok(Self::with_sender(
             HttpSender::new(&ctx.info().await?, ctx),
             device,
             auth,
-            params,
+            options,
         ))
     }
 }
@@ -142,7 +141,7 @@ where
                 message.subject,
                 self.auth,
                 message.content_type,
-                &self.params,
+                self.options,
                 message.payload,
             )
             .await?;

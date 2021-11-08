@@ -1,7 +1,7 @@
 use crate::init::info::Information;
+use crate::tools::http::HttpSenderOptions;
 use crate::tools::Auth;
 use coap_lite::CoapResponse;
-use std::collections::HashMap;
 use url::Url;
 
 mod helper;
@@ -22,13 +22,13 @@ impl CoapSender {
         channel: String,
         auth: Auth,
         content_type: String,
-        params: HashMap<String, String>,
+        options: &HttpSenderOptions,
         payload: Option<Vec<u8>>,
     ) -> anyhow::Result<CoapResponse> {
         let url = self.coap_url.to_string();
 
         log::debug!("Client request: {}", url);
 
-        Ok(helper::get(url, channel, content_type, params, payload, auth).await?)
+        Ok(helper::get(url, channel, content_type, options, payload, auth).await?)
     }
 }

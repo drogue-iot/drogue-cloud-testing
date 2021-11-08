@@ -1,3 +1,4 @@
+use crate::tools::http::HttpSenderOptions;
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -13,7 +14,7 @@ use crate::{
 };
 use coap_lite::ResponseType;
 use serde_json::{json, Value};
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 pub mod command;
 pub mod telemetry;
@@ -24,7 +25,6 @@ pub struct TestData {
     device: String,
     spec: Value,
     auth: Auth,
-    params: HashMap<String, String>,
     payload: Option<Vec<u8>>,
     content_type: Option<String>,
     channel: Option<String>,
@@ -44,7 +44,6 @@ impl TestData {
                 { "pass": password }
             ]}}),
             auth: Auth::UsernamePassword(format!("{}@{}", device, app), password.into()),
-            params: Default::default(),
             ..Default::default()
         }
     }
@@ -54,6 +53,7 @@ impl TestData {
 async fn test_single_coap_to_mqtt_message(
     ctx: &mut TestContext,
     version: MqttVersion,
+    opts: HttpSenderOptions,
     data: TestData,
 ) -> anyhow::Result<()> {
     log::info!("entered coap_to_mqtt!");
@@ -91,7 +91,7 @@ async fn test_single_coap_to_mqtt_message(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, data.params.clone()).await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, &opts).await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -105,7 +105,7 @@ async fn test_single_coap_to_mqtt_message(
             channel,
             data.auth,
             "application/octet-stream".into(),
-            data.params,
+            &opts,
             data.payload,
         )
         .await
@@ -133,6 +133,7 @@ async fn test_single_coap_to_mqtt_message(
             instance: "drogue".into(),
             app: app.name().into(),
             device: device.name().into(),
+            sender: device.name().into(),
             content_type: Some("application/octet-stream".into()),
             payload: vec![],
         }],

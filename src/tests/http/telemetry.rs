@@ -1,6 +1,5 @@
 use super::*;
 use crate::{context::TestContext, tools::Auth};
-use maplit::{convert_args, hashmap};
 use rstest::{fixture, rstest};
 use serde_json::json;
 use uuid::Uuid;
@@ -22,6 +21,7 @@ async fn test_send_telemetry_pass(
     test_single_http_to_mqtt_message(
         &mut ctx,
         version,
+        Default::default(),
         TestData {
             app: app.clone(),
             device: "device1".into(),
@@ -29,7 +29,6 @@ async fn test_send_telemetry_pass(
                 { "pass": "foo" }
             ]}}),
             auth: Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
-            params: Default::default(),
             ..Default::default()
         },
     )
@@ -48,6 +47,10 @@ async fn test_send_telemetry_user(
     test_single_http_to_mqtt_message(
         &mut ctx,
         version,
+        HttpSenderOptions {
+            device: Some("device1".into()),
+            ..Default::default()
+        },
         TestData {
             app: app.clone(),
             device: "device1".into(),
@@ -55,9 +58,6 @@ async fn test_send_telemetry_user(
                 { "user": { "username": "foo", "password": "bar" } }
             ]}}),
             auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
-            params: convert_args!(hashmap! (
-                "device" => "device1",
-            )),
             ..Default::default()
         },
     )
@@ -76,6 +76,11 @@ async fn test_send_telemetry_user_only(
     test_single_http_to_mqtt_message(
         &mut ctx,
         version,
+        HttpSenderOptions {
+            application: Some(app.clone()),
+            device: Some("device1".into()),
+            ..Default::default()
+        },
         TestData {
             app: app.clone(),
             device: "device1".into(),
@@ -83,10 +88,6 @@ async fn test_send_telemetry_user_only(
                 { "user": {"username": "foo", "password": "bar" } }
             ]}}),
             auth: Auth::UsernamePassword("foo".into(), "bar".into()),
-            params: convert_args!(hashmap! (
-                "application" => app,
-                "device" => "device1",
-            )),
             ..Default::default()
         },
     )
@@ -105,6 +106,7 @@ async fn test_send_telemetry_user_alias(
     test_single_http_to_mqtt_message(
         &mut ctx,
         version,
+        Default::default(),
         TestData {
             app: app.clone(),
             device: "device1".into(),

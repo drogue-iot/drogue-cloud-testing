@@ -1,9 +1,64 @@
-use crate::{init::info::Information, tools::Auth};
-use std::collections::HashMap;
-use url::Url;
+use crate::{
+    init::info::Information,
+    tools::{Auth, SendAs},
+};
+use url::{
+    form_urlencoded::{Serializer, Target},
+    Url,
+};
 
 pub trait ClientBuilderProvider {
     fn new_client_builder(&self) -> anyhow::Result<reqwest::ClientBuilder>;
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct HttpSenderOptions {
+    pub application: Option<String>,
+    pub device: Option<String>,
+    // device name to send as (proxied device)
+    pub r#as: Option<String>,
+    pub command_timeout: Option<u32>,
+}
+
+impl From<SendAs> for HttpSenderOptions {
+    fn from(send_as: SendAs) -> Self {
+        match send_as {
+            SendAs::Device => Default::default(),
+            SendAs::Gateway { device } => HttpSenderOptions {
+                r#as: Some(device),
+                ..Default::default()
+            },
+        }
+    }
+}
+
+impl From<&SendAs> for HttpSenderOptions {
+    fn from(send_as: &SendAs) -> Self {
+        match send_as {
+            SendAs::Device => Default::default(),
+            SendAs::Gateway { device } => HttpSenderOptions {
+                r#as: Some(device.clone()),
+                ..Default::default()
+            },
+        }
+    }
+}
+
+impl HttpSenderOptions {
+    pub fn append_query<T: Target>(&self, params: &mut Serializer<T>) {
+        if let Some(ct) = self.command_timeout.as_ref() {
+            params.append_pair("ct", &format!("{}", ct));
+        }
+        if let Some(application) = self.application.as_ref() {
+            params.append_pair("application", application);
+        }
+        if let Some(device) = self.device.as_ref() {
+            params.append_pair("device", device);
+        }
+        if let Some(r#as) = self.r#as.as_ref() {
+            params.append_pair("as", r#as);
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -33,7 +88,7 @@ where
         channel: String,
         auth: &Auth,
         content_type: Option<String>,
-        params: &HashMap<String, String>,
+        options: &HttpSenderOptions,
         payload: Option<Vec<u8>>,
     ) -> anyhow::Result<reqwest::Response> {
         let builder = self.client_builder.new_client_builder()?;
@@ -51,9 +106,13 @@ where
         let mut url = self.http_url.clone();
         url.set_path(&format!("/v1/{}", channel));
 
-        url.query_pairs_mut().clear().extend_pairs(params.iter());
+        {
+            let mut params = url.query_pairs_mut();
+            params.clear();
+            options.append_query(&mut params);
+        }
 
-        log::info!("Sending payload");
+        log::info!("Sending payload ({})", url);
 
         let request = client.post(url);
 

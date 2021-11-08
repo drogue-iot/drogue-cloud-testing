@@ -1,3 +1,4 @@
+use crate::tools::http::HttpSenderOptions;
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -12,7 +13,7 @@ use crate::{
     },
 };
 use serde_json::{json, Value};
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 pub mod command;
 pub mod telemetry;
@@ -23,7 +24,6 @@ pub struct TestData {
     device: String,
     spec: Value,
     auth: Auth,
-    params: HashMap<String, String>,
     payload: Option<Vec<u8>>,
     content_type: Option<String>,
     channel: Option<String>,
@@ -43,7 +43,6 @@ impl TestData {
                 { "pass": password }
             ]}}),
             auth: Auth::UsernamePassword(format!("{}@{}", device, app), password.into()),
-            params: Default::default(),
             ..Default::default()
         }
     }
@@ -53,6 +52,7 @@ impl TestData {
 async fn test_single_http_to_mqtt_message(
     ctx: &mut TestContext,
     version: MqttVersion,
+    options: HttpSenderOptions,
     data: TestData,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
@@ -88,7 +88,7 @@ async fn test_single_http_to_mqtt_message(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, data.params.clone()).await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, &options).await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -102,7 +102,7 @@ async fn test_single_http_to_mqtt_message(
             channel,
             &data.auth,
             Some("application/octet-stream".into()),
-            &data.params,
+            &options,
             data.payload,
         )
         .await
@@ -130,6 +130,7 @@ async fn test_single_http_to_mqtt_message(
             instance: "drogue".into(),
             app: app.name().into(),
             device: device.name().into(),
+            sender: device.name().into(),
             content_type: Some("application/octet-stream".into()),
             payload: vec![],
         }],

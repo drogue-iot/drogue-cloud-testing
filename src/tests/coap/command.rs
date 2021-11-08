@@ -51,11 +51,6 @@ async fn test_single_coap_command(
 
     log::info!("Sending payload");
 
-    // add the command timeout
-    let mut params = data.params.clone();
-    params.insert("ct".into(), "6000".into());
-    let warmup_params = data.params;
-
     // send the telemetry message
 
     let TestData { auth, payload, .. } = data;
@@ -82,7 +77,7 @@ async fn test_single_coap_command(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &auth, warmup_params).await?,
+            HttpWarmup::with_params(ctx, &device, &auth, &Default::default()).await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -90,11 +85,15 @@ async fn test_single_coap_command(
     // start telemetry
 
     let sender = CoapSender::new(&info);
+    let opts = HttpSenderOptions {
+        command_timeout: Some(6000),
+        ..Default::default()
+    };
     let telemetry = sender.send(
         channel,
         auth,
         "application/octet-stream".into(),
-        params,
+        &opts,
         payload,
     );
 
@@ -103,7 +102,7 @@ async fn test_single_coap_command(
         mqtt.wait_for_messages(1, Duration::from_secs(5)).await?;
 
         // then send the command
-        send_http_command(&info, &drg, &app, &device).await
+        send_http_command(&info, &drg, &app, &device, "SET").await
     };
 
     let (telemetry, command) = join!(telemetry, command);

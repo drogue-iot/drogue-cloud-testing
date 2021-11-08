@@ -4,11 +4,12 @@ use crate::{
 };
 use serde_json::json;
 
-pub async fn send_http_command<'a>(
+pub async fn send_http_command(
     info: &Information,
     drg: &Drg,
     app: &Application,
-    device: &Device<'a>,
+    device: &Device<'_>,
+    command: &str,
 ) -> anyhow::Result<reqwest::Response> {
     let client = reqwest::ClientBuilder::new()
         .danger_accept_invalid_certs(true)
@@ -22,7 +23,9 @@ pub async fn send_http_command<'a>(
         appId = app.name(),
         deviceId = device.name(),
     ));
-    command_url.query_pairs_mut().append_pair("command", "SET");
+    command_url
+        .query_pairs_mut()
+        .append_pair("command", command);
     let command = client
         .post(command_url)
         .inject_token(drg.clone())
