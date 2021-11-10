@@ -8,6 +8,7 @@ use crate::{
         messages::WaitForMessages,
         Auth,
         websocket::WebSocketReceiver,
+        warmup::HttpWarmup,
     },
 };
 use serde_json::{json, Value};
@@ -56,7 +57,10 @@ async fn test_single_http_to_websocket_message (
     let info = ctx.info().await?;
 
     let channel = data.channel();
-    let app = Application::new(drg.clone(), data.app).expect("Create a new application");
+    let app = Application::new(drg.clone(), data.app)
+        .expect("Create a new application")
+        .expect_ready();
+
     let device = app
         .create_device(data.device, &data.spec)
         .expect("Create new device");
@@ -74,9 +78,12 @@ async fn test_single_http_to_websocket_message (
 
     log::info!("Receiver created");
 
-    // FIXME: instead of just sleeping, we should try to warm up the channel with different events
-
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    let websocket = websocket
+        .warmup(
+            HttpWarmup::with_params(ctx, &device, &data.auth, Default::default()).await?,
+            Duration::from_secs(30),
+        )
+        .await?;
 
     // do some work
 
