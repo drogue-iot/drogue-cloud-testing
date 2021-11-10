@@ -56,6 +56,7 @@ impl From<Value> for CloudMessage {
             instance: json["instance"].as_str().unwrap_or_default().into(),
             app: json["application"].as_str().unwrap_or_default().into(),
             device: json["device"].as_str().unwrap_or_default().into(),
+            sender: json["sender"].as_str().unwrap_or_default().into(),
             content_type: json["datacontenttype"].as_str().map(|s| s.into()),
             payload,
         }
