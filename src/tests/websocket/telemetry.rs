@@ -28,6 +28,10 @@ async fn test_send_telemetry_pass(
             params: Default::default(),
             ..Default::default()
         },
+        HttpSenderOptions {
+            device: Some("device1".into()),
+            ..Default::default()
+        }
     )
     .await
 }
@@ -52,6 +56,10 @@ async fn test_send_telemetry_user(
             )),
             ..Default::default()
         },
+        HttpSenderOptions {
+            device: Some("device1".into()),
+            ..Default::default()
+        }
     )
     .await
 }
@@ -77,6 +85,10 @@ async fn test_send_telemetry_user_only(
             )),
             ..Default::default()
         },
+        HttpSenderOptions {
+            device: Some("device1".into()),
+            ..Default::default()
+        }
     )
     .await
 }
@@ -98,6 +110,10 @@ async fn test_send_telemetry_user_alias(
             auth: Auth::UsernamePassword(format!("foo@{}", app), "bar".into()),
             ..Default::default()
         },
+        HttpSenderOptions {
+            device: Some("device1".into()),
+            ..Default::default()
+        }
     )
     .await
 }

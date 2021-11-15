@@ -13,7 +13,7 @@ use crate::{
 };
 use serde_json::{json, Value};
 use std::time::Duration;
-use crate::tools::http::HttpSender;
+use crate::tools::http::{HttpSender, HttpSenderOptions};
 
 pub mod telemetry;
 
@@ -52,6 +52,7 @@ impl TestData {
 async fn test_single_http_to_websocket_message (
     ctx: &mut TestContext,
     data: TestData,
+    options: HttpSenderOptions
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
@@ -80,7 +81,7 @@ async fn test_single_http_to_websocket_message (
 
     let websocket = websocket
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, Default::default()).await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, &HttpSenderOptions::default()).await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -96,7 +97,7 @@ async fn test_single_http_to_websocket_message (
             channel,
             &data.auth,
             Some("application/octet-stream".into()),
-            &data.params,
+            &options,
             data.payload,
         )
         .await
@@ -124,6 +125,7 @@ async fn test_single_http_to_websocket_message (
             instance: "drogue".into(),
             app: app.name().into(),
             device: device.name().into(),
+            sender: device.name().into(),
             content_type: Some("application/octet-stream".into()),
             payload: vec![],
         }],

@@ -5,41 +5,42 @@ use async_std::sync::Mutex;
 use async_trait::async_trait;
 use anyhow::{Context, Result};
 use serde_json::Value;
+use tokio::net::TcpStream;
+use futures::StreamExt;
 
 use tokio::task::JoinHandle;
+use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use url::Url;
-use tungstenite::connect;
 use crate::tools::assert::CloudMessage;
 use crate::tools::messages::WaitForMessages;
 use crate::tools::warmup::WarmupSender;
 
 
-pub struct WebSocketReceiver {
+pub struct WebSocketReceiver<'a> {
     messages: Arc<Mutex<Vec<Result<CloudMessage>>>>,
     _ctx: JoinHandle<()>,
+    socket: &'a mut WebSocketStream<MaybeTlsStream<TcpStream>>
 }
 
 
-impl WebSocketReceiver {
-    pub fn new<S>(uri: Url, token: S, app: &str) -> Result<Self>
+impl WebSocketReceiver<'static>  {
+    pub async fn new<S>(uri: Url, token: S, app: &str) -> Result<Self>
         where
             S: Display {
         let mut address = uri.join(app)?;
         address.set_query(Some(format!("token={}", token).as_str()));
 
-        let (mut socket, _) =
-            connect(address).context("Error connecting to the Websocket endpoint:")?;
+        let (mut stream, _) = connect_async(address).await.context("Error connecting to the Websocket endpoint:")?;
+        let (_, read) = stream.split();
 
         log::info!("WebSocket handshake successful");
 
         let messages = Arc::new(Mutex::new(Vec::new()));
         let strm_messages = messages.clone();
 
+        log::info!("Starting message stream...");
         let ctx = tokio::spawn(async move {
-            log::info!("Starting message stream...");
-
-            loop {
-                let msg = socket.read_message();
+            read.for_each(|msg| async {
                 if let Ok(m) = msg {
                     let mut msgs = strm_messages.lock().await;
                     // ignore protocol messages, only show text
@@ -51,12 +52,13 @@ impl WebSocketReceiver {
                         msgs.push(Ok(CloudMessage::from(json)));
                     }
                 }
-            }
+            }).await
         });
 
         Ok(WebSocketReceiver {
             messages,
             _ctx: ctx,
+            socket: &mut stream,
         })
     }
 
@@ -132,15 +134,16 @@ impl WebSocketReceiver {
 
 
 #[async_trait]
-impl WaitForMessages for WebSocketReceiver {
+impl WaitForMessages for WebSocketReceiver<'_>  {
     async fn num_messages(&self) -> usize {
         self.messages.lock().await.len()
     }
 }
 
-impl Drop for WebSocketReceiver {
+impl Drop for WebSocketReceiver<'_> {
     fn drop(&mut self) {
         log::info!("Dropping websocket receiver");
+        self.socket.close(None);
         self._ctx.abort();
     }
 }
