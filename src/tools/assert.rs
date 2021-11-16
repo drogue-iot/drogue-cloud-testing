@@ -1,5 +1,5 @@
-use std::cmp::max;
 use serde_json::Value;
+use std::cmp::max;
 
 /// A message received on the cloud from a device.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -43,7 +43,6 @@ pub fn assert_msgs(actual: &Vec<anyhow::Result<CloudMessage>>, expected: &Vec<Cl
 
 impl From<Value> for CloudMessage {
     fn from(json: Value) -> Self {
-
         let payload = match (json["data_base64"].as_str(), json["data"].as_object()) {
             (Some(data), _) => base64::decode(data).expect("Base64 decode"),
             (_, Some(json)) => serde_json::to_vec(json).expect("JSON decode"),

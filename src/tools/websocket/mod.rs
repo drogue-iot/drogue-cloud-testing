@@ -1,36 +1,35 @@
+use anyhow::{Context, Result};
+use async_std::sync::Mutex;
+use async_trait::async_trait;
+use futures::StreamExt;
+use serde_json::Value;
 use std::fmt::Display;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use async_std::sync::Mutex;
-use async_trait::async_trait;
-use anyhow::{Context, Result};
-use serde_json::Value;
-use tokio::net::TcpStream;
-use futures::StreamExt;
 
-use tokio::task::JoinHandle;
-use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
-use url::Url;
 use crate::tools::assert::CloudMessage;
 use crate::tools::messages::WaitForMessages;
 use crate::tools::warmup::WarmupSender;
+use tokio::task::JoinHandle;
+use tokio_tungstenite::connect_async;
+use url::Url;
 
-
-pub struct WebSocketReceiver<'a> {
+pub struct WebSocketReceiver {
     messages: Arc<Mutex<Vec<Result<CloudMessage>>>>,
     _ctx: JoinHandle<()>,
-    socket: &'a mut WebSocketStream<MaybeTlsStream<TcpStream>>
 }
 
-
-impl WebSocketReceiver<'static>  {
+impl WebSocketReceiver {
     pub async fn new<S>(uri: Url, token: S, app: &str) -> Result<Self>
-        where
-            S: Display {
+    where
+        S: Display,
+    {
         let mut address = uri.join(app)?;
         address.set_query(Some(format!("token={}", token).as_str()));
 
-        let (mut stream, _) = connect_async(address).await.context("Error connecting to the Websocket endpoint:")?;
+        let (stream, _) = connect_async(address)
+            .await
+            .context("Error connecting to the Websocket endpoint:")?;
         let (_, read) = stream.split();
 
         log::info!("WebSocket handshake successful");
@@ -47,18 +46,19 @@ impl WebSocketReceiver<'static>  {
                     if m.is_text() {
                         let message = m.into_text().expect("Invalid message");
                         log::info!("Raw message: {:?}", &message);
-                        let json: Value = serde_json::from_str(message.as_str()).expect("Parse as JSON");
+                        let json: Value =
+                            serde_json::from_str(message.as_str()).expect("Parse as JSON");
                         log::info!("Json message: {:?}", &json);
                         msgs.push(Ok(CloudMessage::from(json)));
                     }
                 }
-            }).await
+            })
+            .await
         });
 
         Ok(WebSocketReceiver {
             messages,
             _ctx: ctx,
-            socket: &mut stream,
         })
     }
 
@@ -68,8 +68,8 @@ impl WebSocketReceiver<'static>  {
 
     // Warms up the listener, to ensure we can receive data.
     pub async fn warmup<S>(self, mut sender: S, timeout: Duration) -> anyhow::Result<Self>
-        where
-            S: WarmupSender,
+    where
+        S: WarmupSender,
     {
         let start = SystemTime::now();
 
@@ -132,18 +132,16 @@ impl WebSocketReceiver<'static>  {
     }
 }
 
-
 #[async_trait]
-impl WaitForMessages for WebSocketReceiver<'_>  {
+impl WaitForMessages for WebSocketReceiver {
     async fn num_messages(&self) -> usize {
         self.messages.lock().await.len()
     }
 }
 
-impl Drop for WebSocketReceiver<'_> {
+impl Drop for WebSocketReceiver {
     fn drop(&mut self) {
         log::info!("Dropping websocket receiver");
-        self.socket.close(None);
         self._ctx.abort();
     }
 }

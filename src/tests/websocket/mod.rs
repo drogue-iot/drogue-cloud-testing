@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use crate::tools::http::{HttpSender, HttpSenderOptions};
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -6,17 +6,16 @@ use crate::{
     tools::{
         assert::{assert_msgs, CloudMessage},
         messages::WaitForMessages,
-        Auth,
-        websocket::WebSocketReceiver,
         warmup::HttpWarmup,
+        websocket::WebSocketReceiver,
+        Auth,
     },
 };
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::time::Duration;
-use crate::tools::http::{HttpSender, HttpSenderOptions};
 
 pub mod telemetry;
-
 
 #[derive(Clone, Debug, Default)]
 pub struct TestData {
@@ -49,10 +48,10 @@ impl TestData {
 }
 
 /// Test a message sent to the HTTP endpoint and received by the Websocket integration
-async fn test_single_http_to_websocket_message (
+async fn test_single_http_to_websocket_message(
     ctx: &mut TestContext,
     data: TestData,
-    options: HttpSenderOptions
+    options: HttpSenderOptions,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
@@ -70,18 +69,16 @@ async fn test_single_http_to_websocket_message (
 
     log::info!("WebSocket integration URL: {}", uri);
 
-    let websocket = WebSocketReceiver::new(
-        uri,
-        drg.current_token().await?,
-        app.name(),
-    )
+    let websocket = WebSocketReceiver::new(uri, drg.current_token().await?, app.name())
+        .await
         .unwrap();
 
     log::info!("Receiver created");
 
     let websocket = websocket
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, &HttpSenderOptions::default()).await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, &HttpSenderOptions::default())
+                .await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -107,7 +104,8 @@ async fn test_single_http_to_websocket_message (
 
     log::info!("Payload sent, waiting for messages");
 
-    websocket.wait_for_messages(1, Duration::from_secs(5))
+    websocket
+        .wait_for_messages(1, Duration::from_secs(5))
         .await
         .expect("Message should not time out");
 

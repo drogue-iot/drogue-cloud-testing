@@ -12,9 +12,7 @@ fn ctx() -> TestContext {
 
 #[rstest]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_pass(
-    mut ctx: TestContext,
-) -> anyhow::Result<()> {
+async fn test_send_telemetry_pass(mut ctx: TestContext) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_http_to_websocket_message(
         &mut ctx,
@@ -31,16 +29,14 @@ async fn test_send_telemetry_pass(
         HttpSenderOptions {
             device: Some("device1".into()),
             ..Default::default()
-        }
+        },
     )
     .await
 }
 
 #[rstest]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_user(
-    mut ctx: TestContext,
-) -> anyhow::Result<()> {
+async fn test_send_telemetry_user(mut ctx: TestContext) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_http_to_websocket_message(
         &mut ctx,
@@ -59,16 +55,14 @@ async fn test_send_telemetry_user(
         HttpSenderOptions {
             device: Some("device1".into()),
             ..Default::default()
-        }
+        },
     )
     .await
 }
 
 #[rstest]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_user_only(
-    mut ctx: TestContext,
-) -> anyhow::Result<()> {
+async fn test_send_telemetry_user_only(mut ctx: TestContext) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_http_to_websocket_message(
         &mut ctx,
@@ -88,16 +82,14 @@ async fn test_send_telemetry_user_only(
         HttpSenderOptions {
             device: Some("device1".into()),
             ..Default::default()
-        }
+        },
     )
     .await
 }
 
 #[rstest]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn test_send_telemetry_user_alias(
-    mut ctx: TestContext,
-) -> anyhow::Result<()> {
+async fn test_send_telemetry_user_alias(mut ctx: TestContext) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_http_to_websocket_message(
         &mut ctx,
@@ -113,7 +105,7 @@ async fn test_send_telemetry_user_alias(
         HttpSenderOptions {
             device: Some("device1".into()),
             ..Default::default()
-        }
+        },
     )
     .await
 }
