@@ -77,8 +77,7 @@ async fn test_single_http_to_websocket_message(
 
     let websocket = websocket
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, &HttpSenderOptions::default())
-                .await?,
+            HttpWarmup::with_params(ctx, &device, &data.auth, &options).await?,
             Duration::from_secs(30),
         )
         .await?;

@@ -16,16 +16,7 @@ async fn test_send_telemetry_pass(mut ctx: TestContext) -> anyhow::Result<()> {
     let app = Uuid::new_v4().to_string();
     test_single_http_to_websocket_message(
         &mut ctx,
-        TestData {
-            app: app.clone(),
-            device: "device1".into(),
-            spec: json!({"credentials": {"credentials": [
-                { "pass": "foo" }
-            ]}}),
-            auth: Auth::UsernamePassword(format!("device1@{}", app), "foo".into()),
-            params: Default::default(),
-            ..Default::default()
-        },
+        TestData::simple(&app),
         HttpSenderOptions {
             device: Some("device1".into()),
             ..Default::default()
@@ -74,12 +65,13 @@ async fn test_send_telemetry_user_only(mut ctx: TestContext) -> anyhow::Result<(
             ]}}),
             auth: Auth::UsernamePassword("foo".into(), "bar".into()),
             params: convert_args!(hashmap! (
-                "application" => app,
+                "application" => app.clone(),
                 "device" => "device1",
             )),
             ..Default::default()
         },
         HttpSenderOptions {
+            application: Some(app.clone()),
             device: Some("device1".into()),
             ..Default::default()
         },
