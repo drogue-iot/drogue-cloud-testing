@@ -45,6 +45,8 @@ serde_urlencoded = "0.7"
 
 drogue-client = "0.8.0-alpha1"
 
+tokio-tungstenite = "0.15.0"
+
 [patch.crates-io]
 #drogue-client = { path = "../drogue-client" }
 drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "5ff15f91aab49c584af9fb244870c13fecd2c916"} # awaiting release

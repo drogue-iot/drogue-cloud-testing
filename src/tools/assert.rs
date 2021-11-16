@@ -1,3 +1,4 @@
+use serde_json::Value;
 use std::cmp::max;
 
 /// A message received on the cloud from a device.
@@ -36,6 +37,27 @@ pub fn assert_msgs(actual: &Vec<anyhow::Result<CloudMessage>>, expected: &Vec<Cl
             (None, None) => {}
             (Some(_), None) => panic!("Expected no message at position #{} but found one", i),
             (None, Some(_)) => panic!("Expected message at position #{} but got none", i),
+        }
+    }
+}
+
+impl From<Value> for CloudMessage {
+    fn from(json: Value) -> Self {
+        let payload = match (json["data_base64"].as_str(), json["data"].as_object()) {
+            (Some(data), _) => base64::decode(data).expect("Base64 decode"),
+            (_, Some(json)) => serde_json::to_vec(json).expect("JSON decode"),
+            (None, None) => vec![],
+        };
+
+        CloudMessage {
+            subject: json["subject"].as_str().unwrap_or_default().into(),
+            r#type: json["type"].as_str().unwrap_or_default().into(),
+            instance: json["instance"].as_str().unwrap_or_default().into(),
+            app: json["application"].as_str().unwrap_or_default().into(),
+            device: json["device"].as_str().unwrap_or_default().into(),
+            sender: json["sender"].as_str().unwrap_or_default().into(),
+            content_type: json["datacontenttype"].as_str().map(|s| s.into()),
+            payload,
         }
     }
 }

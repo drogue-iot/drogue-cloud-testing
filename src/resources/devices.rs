@@ -43,7 +43,7 @@ impl<'a> Drop for Device<'a> {
         if self.deleted {
             log::info!("Skipping deletion of '{}'", self.name);
         } else {
-            log::info!("Destroy application '{}'", self.name);
+            log::info!("Destroy device '{}'", self.name);
             match self.app.drg().delete_device(self.app.name(), &self.name) {
                 Ok(_) => {}
                 Err(err) => {
