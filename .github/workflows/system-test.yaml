@@ -31,6 +31,9 @@ on:
       prNr:
         description: A PR number to build and report back to
         required: false
+      installerArgs:
+        description: Additional installer arguments (like `-s key=value`)
+        required: false
 
 env:
   HCLOUD_VERSION: "1.28.1"
@@ -342,6 +345,7 @@ jobs:
         run: |
           cd release
           ./scripts/drgadm deploy \
+            ${{ github.event.inputs.installerArgs }} \
             -s defaults.images.repository=${{ github.event.inputs.containerRegistry }}
         timeout-minutes: 20
 
@@ -353,6 +357,7 @@ jobs:
           cd release
           ./scripts/drgadm deploy \
             -m \
+            ${{ github.event.inputs.installerArgs }} \
             -s drogueCloudCore.defaults.images.repository=dev.local \
             -S drogueCloudCore.defaults.images.tag=${{ github.run_id }} \
             -s drogueCloudCore.defaults.images.pullPolicy=Never \
