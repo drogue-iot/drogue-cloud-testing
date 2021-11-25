@@ -1,4 +1,4 @@
-use crate::{context::TestContext, init::api_key::ApiKeyCreator};
+use crate::{context::TestContext, init::access_token::AccessTokenCreator};
 use anyhow::Context;
 use drogue_client::{meta, registry};
 use serde_json::{json, Value};
@@ -10,7 +10,7 @@ use uuid::Uuid;
 async fn test_registry_create_app(ctx: &mut TestContext) -> anyhow::Result<()> {
     let uuid = Uuid::new_v4().to_string();
 
-    let key = ctx.create_api_key_web().await.context("Acquire API key")?;
+    let key = ctx.create_access_token_web().await.context("Acquire API key")?;
 
     let reg = ctx
         .registry(key.into_provider())
