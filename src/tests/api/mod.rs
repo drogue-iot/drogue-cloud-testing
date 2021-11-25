@@ -1,10 +1,10 @@
-use crate::{context::TestContext, init::api_key::ApiKeyCreator};
+use crate::{context::TestContext, init::access_token::AccessTokenCreator};
 use test_context::test_context;
 
 #[test_context(TestContext)]
 #[tokio::test]
-async fn test_create_api_key_web(ctx: &mut TestContext) {
-    let key = ctx.create_api_key_web().await.expect("Get API key");
+async fn test_create_access_token_web(ctx: &mut TestContext) {
+    let token = ctx.create_access_token_web().await.expect("Get access token");
 
-    assert!(key.key.starts_with("drg_"));
+    assert!(token.token.starts_with("drg_"));
 }
