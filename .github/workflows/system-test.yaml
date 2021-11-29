@@ -34,6 +34,9 @@ on:
       installerArgs:
         description: Additional installer arguments (like `-s key=value`)
         required: false
+      delayCleanup:
+        description: "This will delay the cleanup until the maximum job timeout exceeds. (NOTE: costs more money!)"
+        required: false
 
 env:
   HCLOUD_VERSION: "1.28.1"
@@ -477,6 +480,10 @@ jobs:
           else
             echo "No changes have been detected since last build, nothing to publish"
           fi
+
+      - name: Delay cleanup
+        if: ${{ github.event.inputs.delayCleanup }}
+        run: sleep infinity
 
   destroy-runner:
     name: Destroy runner
