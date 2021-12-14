@@ -234,10 +234,6 @@ jobs:
           curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
           sudo install minikube-linux-amd64 /usr/bin/minikube
 
-      - name: Install cargo2junit
-        run: |
-          cargo install --force cargo2junit
-
       - name: Install markdown-test-report
         run: |
           # it already exists in the cached target folder, so we force the installation
@@ -388,11 +384,6 @@ jobs:
           else
             markdown-test-report
           fi
-
-      - name: Convert test data
-        if: ${{ always() }}
-        run: |
-          cat test-output.json | cargo2junit > results.xml
 
       - name: Upload raw test results
         if: ${{ always() }}
