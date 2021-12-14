@@ -8,7 +8,7 @@ async fn test_drg_version(ctx: &mut TestContext) -> anyhow::Result<()> {
 
     assert_eq!(
         r#"Drg Version: 0.8.0
-Connected drogue-cloud service: v0.8.0
+Connected drogue-cloud service: v0.9.0
 "#,
         drg.version_str().unwrap()
     );
