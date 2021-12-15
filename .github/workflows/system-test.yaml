@@ -201,7 +201,7 @@ jobs:
         run: |
           mkdir -p download
           cd download
-          curl -sL https://github.com/drogue-iot/drg/releases/download/v0.7.0/drg-0.7.0-linux-amd64.tar.gz -o drg.tar.gz
+          curl -sL https://github.com/drogue-iot/drg/releases/download/v0.8.0/drg-0.8.0-linux-amd64.tar.gz -o drg.tar.gz
           tar --strip-components=1 -xvzf drg.tar.gz
           mv drg "$HOME/.local/bin"
 
