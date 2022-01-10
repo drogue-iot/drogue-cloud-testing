@@ -286,8 +286,8 @@ jobs:
         run: |
           cd drogue-cloud
 
-          make build build-images
-          make tag-images CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
+          make build build-images SKIP_SERVER=1
+          make tag-images CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }} SKIP_SERVER=1
           make -C installer
 
           cd ..
