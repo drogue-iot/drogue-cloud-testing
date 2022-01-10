@@ -323,7 +323,7 @@ jobs:
 
       - name: Load images in kind
         if: ${{ needs.init.outputs.needBuild && ( needs.init.outputs.cluster == 'kind' ) }}
-        run: make -C drogue-cloud kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }}
+        run: make -C drogue-cloud kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }} SKIP_SERVER=1
 
       - name: Create Minikube cluster
         if: ${{ needs.init.outputs.cluster == 'minikube' }}
