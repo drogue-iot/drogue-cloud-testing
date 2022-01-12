@@ -26,19 +26,22 @@ impl MqttDevice {
     pub async fn new(
         info: &Information,
         auth: Auth,
-        version: MqttVersion,
+        variant: MqttVariant,
         ctx: &mut TestContext,
     ) -> anyhow::Result<Self> {
         let client_id = Uuid::new_v4().to_string();
 
-        let uri = format!("ssl://{}:{}", info.mqtt.host, info.mqtt.port);
+        let uri = match variant {
+            MqttVariant::Plain(_) => format!("ssl://{}:{}", info.mqtt.host, info.mqtt.port),
+            MqttVariant::WebSocket(_) => scrub_uri(&info.mqtt_ws.url),
+        };
 
         let create_opts = paho_mqtt::CreateOptionsBuilder::new()
             .server_uri(uri)
             .client_id(client_id)
             .persistence(paho_mqtt::PersistenceType::None);
 
-        let create_opts = match version {
+        let create_opts = match variant.version() {
             MqttVersion::V3_1_1 => create_opts.mqtt_version(paho_mqtt::MQTT_VERSION_3_1_1),
             MqttVersion::V5(_) => create_opts.mqtt_version(paho_mqtt::MQTT_VERSION_5),
         };
@@ -73,7 +76,7 @@ impl MqttDevice {
             .keep_alive_interval(Duration::from_secs(30))
             .automatic_reconnect(Duration::from_millis(100), Duration::from_secs(5));
 
-        version.apply(&mut conn_opts);
+        variant.version().apply(&mut conn_opts);
 
         let dispatcher = Arc::new(Mutex::new(MqttMessageDispatcher {
             receiver_map: HashMap::new(),

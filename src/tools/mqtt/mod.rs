@@ -10,6 +10,29 @@ pub enum MqttVersion {
     V5(bool),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum MqttVariant {
+    Plain(MqttVersion),
+    WebSocket(MqttVersion),
+}
+
+impl From<(MqttVersion, bool)> for MqttVariant {
+    fn from(value: (MqttVersion, bool)) -> Self {
+        match value.1 {
+            true => MqttVariant::WebSocket(value.0),
+            false => MqttVariant::Plain(value.0),
+        }
+    }
+}
+
+impl MqttVariant {
+    pub fn version(&self) -> MqttVersion {
+        match self {
+            Self::Plain(version) | Self::WebSocket(version) => *version,
+        }
+    }
+}
+
 impl MqttVersion {
     pub fn is_binary(&self) -> bool {
         match self {
@@ -49,4 +72,11 @@ impl From<MqttQoS> for i32 {
             MqttQoS::QoS2 => 2,
         }
     }
+}
+
+pub fn scrub_uri<S>(uri: S) -> String
+where
+    S: AsRef<str>,
+{
+    format!("{}/mqtt", uri.as_ref().trim_end_matches('/').to_string())
 }

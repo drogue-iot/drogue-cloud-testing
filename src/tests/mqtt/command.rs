@@ -20,10 +20,11 @@ async fn simple(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
+    #[values(true, false)] ws: bool,
 ) -> anyhow::Result<()> {
     perform_simple(
         ctx,
-        version,
+        (version, ws).into(),
         CommandOptions {
             command: "SET",
             filter: "command/inbox/#",
@@ -40,10 +41,11 @@ async fn simple_direct(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
+    #[values(true, false)] ws: bool,
 ) -> anyhow::Result<()> {
     perform_simple(
         ctx,
-        version,
+        (version, ws).into(),
         CommandOptions {
             command: "SET",
             filter: "command/inbox/device1/#",
@@ -60,10 +62,11 @@ async fn simple_me(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
+    #[values(true, false)] ws: bool,
 ) -> anyhow::Result<()> {
     perform_simple(
         ctx,
-        version,
+        (version, ws).into(),
         CommandOptions {
             command: "SET",
             filter: "command/inbox//#",
@@ -75,7 +78,7 @@ async fn simple_me(
 
 async fn perform_simple(
     mut ctx: TestContext,
-    version: MqttVersion,
+    variant: MqttVariant,
     options: CommandOptions<'_>,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
@@ -89,7 +92,7 @@ async fn perform_simple(
     test_single_mqtt_command(
         &mut ctx,
         &app,
-        version,
+        variant,
         options,
         TestData {
             app: app_name.clone(),
@@ -111,10 +114,11 @@ async fn gateway(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
+    #[values(true, false)] ws: bool,
 ) -> anyhow::Result<()> {
     perform_gateway(
         ctx,
-        version,
+        (version, ws).into(),
         CommandOptions {
             command: "SET",
             filter: "command/inbox/#",
@@ -131,10 +135,11 @@ async fn gateway_direct(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     version: MqttVersion,
+    #[values(true, false)] ws: bool,
 ) -> anyhow::Result<()> {
     perform_gateway(
         ctx,
-        version,
+        (version, ws).into(),
         CommandOptions {
             command: "SET",
             filter: "command/inbox/device1/#",
@@ -146,7 +151,7 @@ async fn gateway_direct(
 
 async fn perform_gateway(
     mut ctx: TestContext,
-    version: MqttVersion,
+    variant: MqttVariant,
     options: CommandOptions<'_>,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
@@ -169,7 +174,7 @@ async fn perform_gateway(
     test_single_mqtt_command(
         &mut ctx,
         &app,
-        version,
+        variant,
         options,
         TestData {
             app: app_name.clone(),
@@ -197,7 +202,7 @@ struct CommandOptions<'o> {
 async fn test_single_mqtt_command(
     ctx: &mut TestContext,
     app: &Application,
-    version: MqttVersion,
+    variant: MqttVariant,
     options: CommandOptions<'_>,
     data: TestData,
 ) -> anyhow::Result<()> {
@@ -212,7 +217,7 @@ async fn test_single_mqtt_command(
 
     // subscribe to commands, we don't need to send telemetry here
 
-    let mut mqtt = MqttDevice::new(&info, data.auth, version, ctx).await?;
+    let mut mqtt = MqttDevice::new(&info, data.auth, variant, ctx).await?;
     mqtt.subscribe_commands(options.filter)
         .await
         .expect("MQTT subscribe to commands to succeed");

@@ -23,8 +23,10 @@ async fn test_send_telemetry_pass(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     endpoint_version: MqttVersion,
+    #[values(false, true)] endpoint_ws: bool,
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     integration_version: MqttVersion,
+    #[values(false, true)] integration_ws: bool,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let app_name = Uuid::new_v4().to_string();
@@ -36,8 +38,8 @@ async fn test_send_telemetry_pass(
     test_single_mqtt_to_mqtt_message(
         &mut ctx,
         MqttQoS::QoS0,
-        endpoint_version,
-        integration_version,
+        (endpoint_version, endpoint_ws).into(),
+        (integration_version, integration_ws).into(),
         &app,
         TestData {
             app: app_name.clone(),
@@ -59,8 +61,10 @@ async fn test_send_telemetry_gateway_pass(
     #[rustfmt::skip]
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     endpoint_version: MqttVersion,
+    #[values(false, true)] endpoint_ws: bool,
     #[values(MqttVersion::V3_1_1, MqttVersion::V5(false), MqttVersion::V5(true))]
     integration_version: MqttVersion,
+    #[values(false, true)] integration_ws: bool,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let app_name = Uuid::new_v4().to_string();
@@ -81,8 +85,8 @@ async fn test_send_telemetry_gateway_pass(
     test_single_mqtt_to_mqtt_message(
         &mut ctx,
         MqttQoS::QoS0,
-        endpoint_version,
-        integration_version,
+        (endpoint_version, endpoint_ws).into(),
+        (integration_version, integration_ws).into(),
         &app,
         TestData {
             app: app_name.clone(),

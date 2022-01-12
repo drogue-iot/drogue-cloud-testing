@@ -1193,8 +1193,7 @@ dependencies = [
 [[package]]
 name = "paho-mqtt-sys"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ad9ac6a77a7e7c70cd51262b94ab666c9e4c38fb0f4201dba8d7f8589aa8ce4"
+source = "git+https://github.com/eclipse/paho.mqtt.rust.git?rev=d3280b3a2bd894fba223bd2c4bb3d4df1a06c646#d3280b3a2bd894fba223bd2c4bb3d4df1a06c646"
 dependencies = [
  "cmake",
  "openssl-sys",

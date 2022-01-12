@@ -35,7 +35,8 @@ uuid = { version = "0.8", features = ["v4"] }
 
 tokio = { version = "1.7", features = ["full", "rt-multi-thread"] }
 
-paho-mqtt = { version = "0.9", features = ["bundled"] }
+# disable bundled to use the system version of paho, which might have stack tracing enabled
+paho-mqtt = { version = "0.9", default-features = false, features = ["bundled", "ssl"] }
 
 coap = "0.11"
 coap-lite = "0.5"
@@ -50,3 +51,4 @@ tokio-tungstenite = "0.15.0"
 [patch.crates-io]
 #drogue-client = { path = "../drogue-client" }
 #drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "5ff15f91aab49c584af9fb244870c13fecd2c916"} # awaiting release
+paho-mqtt-sys = { git = "https://github.com/eclipse/paho.mqtt.rust.git", rev = "d3280b3a2bd894fba223bd2c4bb3d4df1a06c646" } # awaiting release

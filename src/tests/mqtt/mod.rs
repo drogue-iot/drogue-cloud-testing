@@ -1,3 +1,4 @@
+use crate::tools::mqtt::{scrub_uri, MqttVariant};
 use crate::tools::SendAs;
 use crate::{
     context::TestContext,
@@ -6,7 +7,7 @@ use crate::{
     tools::{
         assert::{assert_msgs, CloudMessage},
         messages::WaitForMessages,
-        mqtt::{MqttDevice, MqttQoS, MqttReceiver, MqttVersion},
+        mqtt::{MqttDevice, MqttQoS, MqttReceiver},
         warmup::HttpWarmup,
         Auth,
     },
@@ -45,8 +46,8 @@ impl TestData {
 async fn test_single_mqtt_to_mqtt_message(
     ctx: &mut TestContext,
     qos: MqttQoS,
-    endpoint_version: MqttVersion,
-    integration_version: MqttVersion,
+    endpoint_variant: MqttVariant,
+    integration_variant: MqttVariant,
     app: &Application,
     data: TestData,
 ) -> anyhow::Result<()> {
@@ -59,10 +60,13 @@ async fn test_single_mqtt_to_mqtt_message(
         .create_device(data.device, &data.spec)
         .expect("Create new device");
 
-    let uri = format!(
-        "ssl://{}:{}",
-        info.mqtt_integration.host, info.mqtt_integration.port
-    );
+    let uri = match integration_variant {
+        MqttVariant::Plain(_) => format!(
+            "ssl://{}:{}",
+            info.mqtt_integration.host, info.mqtt_integration.port
+        ),
+        MqttVariant::WebSocket(_) => scrub_uri(&info.mqtt_integration_ws.url),
+    };
 
     log::info!("MQTT integration URL: {}", uri);
 
@@ -70,7 +74,7 @@ async fn test_single_mqtt_to_mqtt_message(
         uri,
         None,
         Some(drg.current_token().await?),
-        integration_version,
+        integration_variant.version(),
         format!("app/{}", app.name()),
         MqttQoS::QoS0,
     )
@@ -95,7 +99,7 @@ async fn test_single_mqtt_to_mqtt_message(
 
     log::info!("Sending payload: {}", topic);
 
-    MqttDevice::new(&info, data.auth, endpoint_version, ctx)
+    MqttDevice::new(&info, data.auth, endpoint_variant, ctx)
         .await?
         .send(
             topic,
