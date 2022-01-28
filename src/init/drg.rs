@@ -151,7 +151,7 @@ impl Drg {
 
         if let Some(spec) = &spec {
             args.push("--spec");
-            args.push(&spec);
+            args.push(spec);
         }
 
         self.run(&args)?;
