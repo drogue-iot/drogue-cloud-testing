@@ -242,7 +242,7 @@ jobs:
       # get the content to test
 
       - name: Download release
-        if: ${{ !needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'false' }}
         run: |
           mkdir release
           cd release
@@ -252,7 +252,7 @@ jobs:
           find .
 
       - name: Checkout for local build
-        if: ${{ needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
@@ -277,14 +277,14 @@ jobs:
           git log -1
 
       - uses: actions/cache@v2
-        if: ${{ needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'true' }}
         with:
           path: |
             drogue-cloud/target/
           key: ${{ runner.os }}-cargo-drogue-${{ hashFiles('**/drogue-cloud/Cargo.lock') }}
 
       - name: Perform a local build
-        if: ${{ needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'true' }}
         run: |
           cd drogue-cloud
 
@@ -301,7 +301,7 @@ jobs:
           cd ..
 
       - name: Upload locally built installer
-        if: ${{ needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'true' }}
         uses: actions/upload-artifact@v2
         with:
           name: installer
@@ -324,7 +324,7 @@ jobs:
           config: kind/cluster-config.yaml
 
       - name: Load images in kind
-        if: ${{ needs.init.outputs.needBuild && ( needs.init.outputs.cluster == 'kind' ) }}
+        if: ${{ ( needs.init.outputs.needBuild == 'true' ) && ( needs.init.outputs.cluster == 'kind' ) }}
         run: make -C drogue-cloud kind-load CONTAINER_REGISTRY=dev.local IMAGE_TAG=${{ github.run_id }} SKIP_SERVER=1
 
       - name: Create Minikube cluster
@@ -338,7 +338,7 @@ jobs:
       # Start deployment
 
       - name: Deploy Drogue (release build)
-        if: ${{ !needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'false' }}
         env:
           DEBUG: "true"
         run: |
@@ -349,7 +349,7 @@ jobs:
         timeout-minutes: 20
 
       - name: Deploy drogue (local build)
-        if: ${{ needs.init.outputs.needBuild }}
+        if: ${{ needs.init.outputs.needBuild == 'true' }}
         env:
           TEST_CERTS_IMAGE: "dev.local/test-cert-generator:${{ github.run_id }}"
         run: |
@@ -434,7 +434,7 @@ jobs:
           path: screenshots
 
       - name: Append PR comment
-        if: ${{ always() && ( github.event.inputs.prNr != '' ) && needs.init.outputs.needBuild }}
+        if: ${{ always() && ( github.event.inputs.prNr != '' ) && ( needs.init.outputs.needBuild == 'true' ) }}
         env:
           GH_TOKEN: ${{ secrets.API_PAT }}
         run: |
