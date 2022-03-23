@@ -67,6 +67,7 @@ jobs:
       - id: needBuild
         name: Evaluate if we need a local build
         run: |
+          echo "Release URL: ${{ github.event.inputs.releaseUrl }}"
           echo "::set-output name=needBuild::${{ github.event.inputs.releaseUrl == '' }}"
 
       - id: localBuild
