@@ -160,6 +160,7 @@ jobs:
       - run: |
           echo "Cluster type: ${{ needs.init.outputs.cluster }}"
           echo "::notice title=Cluster type::${{ needs.init.outputs.cluster }}"
+          echo "Require local build: ${{ needs.init.outputs.needBuild }}"
           echo "::notice title=Test subject::${{ ( needs.init.outputs.needBuild && 'Local build' ) || format('Released artifact: {0}', github.event.inputs.releaseUrl) }}"
 
       - run: |
