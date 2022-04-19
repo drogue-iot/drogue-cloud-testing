@@ -56,17 +56,52 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
 
     login_button.click().await?;
 
-    let mut form = web.form(Locator::Id("kc-form-login")).await?;
-    form.set_by_name("username", &config.user)
-        .await?
-        .set_by_name("password", &config.password)
-        .await?
-        .submit()
-        .await?;
+    // when pressing the login button, it may be we need to provide credentials, or are
+    // logged in right away.
 
-    web.wait().for_element(Locator::Id("user-dropdown")).await?;
+    loop {
+        // check for login form
 
-    log::info!("Login complete");
+        match web.form(Locator::Id("kc-form-login")).await {
+            Ok(mut form) => {
+                form.set_by_name("username", &config.user)
+                    .await?
+                    .set_by_name("password", &config.password)
+                    .await?
+                    .submit()
+                    .await?;
 
-    Ok(())
+                web.wait().for_element(Locator::Id("user-dropdown")).await?;
+
+                log::info!("Login complete");
+
+                return Ok(());
+            }
+            Err(CmdError::NoSuchElement(_)) => {}
+            Err(err) => return Err(err.into()),
+        }
+
+        // check for user dropdown
+
+        match web.find(Locator::Id("user-dropdown")).await {
+            Ok(_) => {
+                // we are already logged in, return
+                log::info!("Still had a session");
+                return Ok(());
+            }
+            Err(CmdError::NoSuchElement(_)) => {}
+            Err(err) => return Err(err.into()),
+        }
+
+        // timeout?
+
+        if end < Instant::now() {
+            log::info!("Time out waiting for login form");
+            anyhow::bail!("Found neither user dropdown nor login form");
+        }
+
+        // wait a bit longer
+
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
 }
