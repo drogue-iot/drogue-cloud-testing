@@ -1,5 +1,4 @@
-use crate::tools::mqtt::{scrub_uri, MqttVariant};
-use crate::tools::SendAs;
+use crate::resources::devices::Device;
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -7,12 +6,13 @@ use crate::{
     tools::{
         assert::{assert_msgs, CloudMessage},
         messages::WaitForMessages,
+        mqtt::{scrub_uri, MqttVariant},
         mqtt::{MqttDevice, MqttQoS, MqttReceiver},
         warmup::HttpWarmup,
-        Auth,
+        Auth, SendAs,
     },
 };
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::time::Duration;
 
 pub mod command;
@@ -112,7 +112,8 @@ async fn test_single_mqtt_to_mqtt_message(
 
     log::info!("Payload sent, waiting for messages");
 
-    mqtt.wait_for_messages(1, Duration::from_secs(5))
+    // wait for 3 messages, 2 connection events, one data message
+    mqtt.wait_for_messages(3, Duration::from_secs(5))
         .await
         .expect("Message should not time out");
 
@@ -122,19 +123,91 @@ async fn test_single_mqtt_to_mqtt_message(
 
     let messages = mqtt.close().await;
 
+    let mf = MessageFactory::new(&app, &device);
+
     assert_msgs(
         &messages,
-        &vec![CloudMessage {
-            subject: channel,
-            r#type: "io.drogue.event.v1".into(),
-            instance: "drogue".into(),
-            app: app.name().into(),
-            device: device.name().into(),
-            sender: data.expected.sender.unwrap_or_else(|| device.name().into()),
-            content_type: Some("application/octet-stream".into()),
-            payload: data.payload.unwrap_or_default(),
-        }],
+        &vec![
+            mf.connection(true),
+            mf.data(&channel, data.expected.sender, data.payload),
+            mf.connection(false),
+        ],
     );
 
     Ok(())
+}
+
+pub struct MessageFactory<'t> {
+    app: &'t Application,
+    device: &'t Device<'t>,
+}
+
+impl<'t> MessageFactory<'t> {
+    pub fn new(app: &'t Application, device: &'t Device) -> Self {
+        Self { app, device }
+    }
+
+    pub fn connection(&self, state: bool) -> CloudMessage {
+        connection_message(self.app, self.device, state)
+    }
+
+    pub fn data(
+        &self,
+        channel: &str,
+        sender: Option<String>,
+        payload: Option<Vec<u8>>,
+    ) -> CloudMessage {
+        data_message(channel, self.app, self.device, sender, payload)
+    }
+}
+
+fn connection_message(app: &Application, device: &Device, state: bool) -> CloudMessage {
+    message(
+        "connection",
+        "io.drogue.connection.v1",
+        app,
+        device,
+        None,
+        Some("application/json"),
+        Some(serde_json::to_vec(&json!({ "connected": state })).unwrap()),
+    )
+}
+
+fn data_message(
+    channel: &str,
+    app: &Application,
+    device: &Device,
+    sender: Option<String>,
+    payload: Option<Vec<u8>>,
+) -> CloudMessage {
+    message(
+        channel,
+        "io.drogue.event.v1",
+        app,
+        device,
+        sender,
+        Some("application/octet-stream"),
+        payload,
+    )
+}
+
+fn message(
+    channel: &str,
+    r#type: &str,
+    app: &Application,
+    device: &Device,
+    sender: Option<String>,
+    content_type: Option<&str>,
+    payload: Option<Vec<u8>>,
+) -> CloudMessage {
+    CloudMessage {
+        subject: channel.into(),
+        r#type: r#type.into(),
+        instance: "drogue".into(),
+        app: app.name().into(),
+        device: device.name().into(),
+        sender: sender.unwrap_or_else(|| device.name().into()),
+        content_type: content_type.map(|s| s.into()),
+        payload: payload.unwrap_or_default(),
+    }
 }
