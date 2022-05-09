@@ -185,7 +185,7 @@ async fn perform_gateway(
                 device: "device1".into(),
             },
             expected: ExpectedOutcome {
-                sender: Some("gateway1".into()),
+                device: Some("device1".into()),
             },
             ..Default::default()
         },

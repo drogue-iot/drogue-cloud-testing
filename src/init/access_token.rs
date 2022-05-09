@@ -32,10 +32,14 @@ pub trait AccessTokenCreator {
     async fn create_access_token_web(&mut self) -> anyhow::Result<AccessToken>;
 }
 
-pub async fn create_access_token_web(web: &mut WebDriver, config: &Config) -> anyhow::Result<String> {
+pub async fn create_access_token_web(
+    web: &mut WebDriver,
+    config: &Config,
+) -> anyhow::Result<String> {
     login(web, config).await?;
 
-    web.screenshot("create_access_token_web/before-goto").await?;
+    web.screenshot("create_access_token_web/before-goto")
+        .await?;
 
     web.goto("/tokens").await?;
 
@@ -49,16 +53,19 @@ pub async fn create_access_token_web(web: &mut WebDriver, config: &Config) -> an
 
     log::debug!("Got button ({:?}), clicking it ...", btn);
 
-    web.screenshot("create_access_token_web/before-click").await?;
+    web.screenshot("create_access_token_web/before-click")
+        .await?;
     // FIXME: try with a delay, to see if the still needs some event listener to be attached
     tokio::time::sleep(Duration::from_secs(5)).await;
-    web.screenshot("create_access_token_web/before-click-2").await?;
+    web.screenshot("create_access_token_web/before-click-2")
+        .await?;
 
     btn.click().await?;
 
-    web.screenshot("create_access_token_web/after-click").await?;
+    web.screenshot("create_access_token_web/after-click")
+        .await?;
 
-    let mut clp = web
+    let clp = web
         .wait()
         .for_element(Locator::Css(
             r#".pf-c-clipboard-copy input[name="access-token"]"#,

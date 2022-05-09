@@ -63,7 +63,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
         // check for login form
 
         match web.form(Locator::Id("kc-form-login")).await {
-            Ok(mut form) => {
+            Ok(form) => {
                 form.set_by_name("username", &config.user)
                     .await?
                     .set_by_name("password", &config.password)

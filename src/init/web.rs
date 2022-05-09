@@ -5,6 +5,7 @@ use std::fs::{create_dir_all, write};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
+use fantoccini::error::CmdError;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -62,6 +63,10 @@ impl WebDriver {
         write(&name, &data)?;
 
         Ok(())
+    }
+
+    pub async fn close(self) -> Result<(), CmdError> {
+        self.client.close().await
     }
 }
 
@@ -135,7 +140,7 @@ mod test {
     #[tokio::test]
     #[should_panic(expected = "Don't panic!")]
     async fn test_web_destroy(ctx: &mut TestContext) {
-        let mut web = ctx.web().await.expect("Web Driver");
+        let web = ctx.web().await.expect("Web Driver");
 
         web.goto("https://drogue.io")
             .await

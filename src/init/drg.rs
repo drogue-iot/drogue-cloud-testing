@@ -141,7 +141,7 @@ impl Drg {
     }
 
     pub fn create_device(&self, app: &str, name: &str, spec: &Value) -> anyhow::Result<()> {
-        let mut args = vec!["create", "device", "--app", app, name];
+        let mut args = vec!["create", "device", "-a", app, name];
 
         let spec = match spec {
             Value::Object(_) => Some(serde_json::to_string(spec)?),
@@ -159,13 +159,13 @@ impl Drg {
     }
 
     pub fn delete_device(&self, app: &str, name: &str) -> anyhow::Result<()> {
-        self.run(&["delete", "device", "--app", app, name])?;
+        self.run(&["delete", "device", "-a", app, name])?;
         Ok(())
     }
 
     #[allow(dead_code)]
     pub fn get_device(&self, app: &str, name: &str) -> anyhow::Result<serde_json::Value> {
-        let json = self.run(&["get", "device", "--app", app, name])?;
+        let json = self.run(&["get", "device", "-a", app, name])?;
         Ok(serde_json::from_str(&json)?)
     }
 }

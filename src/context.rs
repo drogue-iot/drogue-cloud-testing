@@ -37,7 +37,7 @@ impl Default for TestContext {
 impl Drop for TestContext {
     fn drop(&mut self) {
         // FIXME: this can be improved once https://github.com/la10736/rstest/issues/94 is resolved
-        if let Some(mut web) = self.web.take() {
+        if let Some(web) = self.web.take() {
             tokio::task::block_in_place(move || {
                 Handle::current()
                     .block_on(async move { web.close().await })
@@ -54,7 +54,7 @@ impl AsyncTestContext for TestContext {
     }
 
     async fn teardown(mut self) {
-        if let Some(mut web) = self.web.take() {
+        if let Some(web) = self.web.take() {
             web.close().await.ok();
         }
     }

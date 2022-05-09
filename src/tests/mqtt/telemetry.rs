@@ -97,7 +97,7 @@ async fn test_send_telemetry_gateway_pass(
                 device: "device1".into(),
             },
             expected: ExpectedOutcome {
-                sender: Some("gateway1".into()),
+                device: Some("device1".into()),
             },
             ..Default::default()
         },
