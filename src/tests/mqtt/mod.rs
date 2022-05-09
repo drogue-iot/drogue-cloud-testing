@@ -123,13 +123,18 @@ async fn test_single_mqtt_to_mqtt_message(
 
     let messages = mqtt.close().await;
 
-    let mf = MessageFactory::new(&app, &device);
+    let connecting_device = data
+        .expected
+        .sender
+        .as_deref()
+        .unwrap_or_else(|| device.name());
+    let mf = MessageFactory::new(app, connecting_device);
 
     assert_msgs(
         &messages,
         &vec![
             mf.connection(true),
-            mf.data(&channel, data.expected.sender, data.payload),
+            mf.data(&channel, data.expected.sender.as_deref(), data.payload),
             mf.connection(false),
         ],
     );
@@ -139,29 +144,32 @@ async fn test_single_mqtt_to_mqtt_message(
 
 pub struct MessageFactory<'t> {
     app: &'t Application,
-    device: &'t Device<'t>,
+    connecting_device: &'t str,
 }
 
 impl<'t> MessageFactory<'t> {
-    pub fn new(app: &'t Application, device: &'t Device) -> Self {
-        Self { app, device }
+    pub fn new(app: &'t Application, connecting_device: &'t str) -> Self {
+        Self {
+            app,
+            connecting_device,
+        }
     }
 
     pub fn connection(&self, state: bool) -> CloudMessage {
-        connection_message(self.app, self.device, state)
+        connection_message(self.app, self.connecting_device, state)
     }
 
     pub fn data(
         &self,
         channel: &str,
-        sender: Option<String>,
+        sender: Option<&str>,
         payload: Option<Vec<u8>>,
     ) -> CloudMessage {
-        data_message(channel, self.app, self.device, sender, payload)
+        data_message(channel, self.app, self.connecting_device, sender, payload)
     }
 }
 
-fn connection_message(app: &Application, device: &Device, state: bool) -> CloudMessage {
+fn connection_message(app: &Application, device: &str, state: bool) -> CloudMessage {
     message(
         "connection",
         "io.drogue.connection.v1",
@@ -176,8 +184,8 @@ fn connection_message(app: &Application, device: &Device, state: bool) -> CloudM
 fn data_message(
     channel: &str,
     app: &Application,
-    device: &Device,
-    sender: Option<String>,
+    device: &str,
+    sender: Option<&str>,
     payload: Option<Vec<u8>>,
 ) -> CloudMessage {
     message(
@@ -195,8 +203,8 @@ fn message(
     channel: &str,
     r#type: &str,
     app: &Application,
-    device: &Device,
-    sender: Option<String>,
+    device: &str,
+    sender: Option<&str>,
     content_type: Option<&str>,
     payload: Option<Vec<u8>>,
 ) -> CloudMessage {
@@ -205,8 +213,8 @@ fn message(
         r#type: r#type.into(),
         instance: "drogue".into(),
         app: app.name().into(),
-        device: device.name().into(),
-        sender: sender.unwrap_or_else(|| device.name().into()),
+        device: device.into(),
+        sender: sender.unwrap_or_else(|| device).into(),
         content_type: content_type.map(|s| s.into()),
         payload: payload.unwrap_or_default(),
     }
