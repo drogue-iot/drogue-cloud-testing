@@ -1,3 +1,4 @@
+use crate::resources::devices::Device;
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -11,7 +12,7 @@ use crate::{
         Auth, SendAs,
     },
 };
-use serde_json::{json, Value};
+use serde_json::json;
 use std::time::Duration;
 
 pub mod command;
@@ -19,9 +20,6 @@ pub mod telemetry;
 
 #[derive(Clone, Debug, Default)]
 pub struct TestData {
-    app: String,
-    device: String,
-    spec: Value,
     auth: Auth,
     send_as: SendAs,
     payload: Option<Vec<u8>>,
@@ -48,16 +46,14 @@ async fn test_single_mqtt_to_mqtt_message(
     endpoint_variant: MqttVariant,
     integration_variant: MqttVariant,
     app: &Application,
+    sender: &Device<'_>,
+    device: &Device<'_>,
     data: TestData,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
 
     let channel = data.channel();
-
-    let device = app
-        .create_device(data.device, &data.spec)
-        .expect("Create new device");
 
     let uri = match integration_variant {
         MqttVariant::Plain(_) => format!(
@@ -84,7 +80,7 @@ async fn test_single_mqtt_to_mqtt_message(
 
     let mqtt = mqtt
         .warmup(
-            HttpWarmup::with_params(ctx, &device, &data.auth, &(&data.send_as).into()).await?,
+            HttpWarmup::with_params(ctx, device, &data.auth, &(&data.send_as).into()).await?,
             Duration::from_secs(30),
         )
         .await?;
@@ -122,7 +118,7 @@ async fn test_single_mqtt_to_mqtt_message(
 
     let messages = mqtt.close().await;
 
-    let mf = MessageFactory::new(app, device.name());
+    let mf = MessageFactory::new(app, sender.name());
 
     assert_msgs(
         &messages,

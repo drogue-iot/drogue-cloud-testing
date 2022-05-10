@@ -35,18 +35,24 @@ async fn test_send_telemetry_pass(
         .expect("Create a new application")
         .expect_ready();
 
+    let device = app
+        .create_device(
+            "device1",
+            &json!({"credentials": {"credentials": [
+                { "pass": "foo" }
+            ]}}),
+        )
+        .expect("Create new device");
+
     test_single_mqtt_to_mqtt_message(
         &mut ctx,
         MqttQoS::QoS0,
         (endpoint_version, endpoint_ws).into(),
         (integration_version, integration_ws).into(),
         &app,
+        &device,
+        &device,
         TestData {
-            app: app_name.clone(),
-            device: "device1".into(),
-            spec: json!({"credentials": {"credentials": [
-                { "pass": "foo" }
-            ]}}),
             auth: Auth::UsernamePassword(format!("device1@{}", app_name), "foo".into()),
             ..Default::default()
         },
@@ -73,7 +79,7 @@ async fn test_send_telemetry_gateway_pass(
         .expect("Create a new application")
         .expect_ready();
 
-    let _gateway = Device::new(
+    let gateway = Device::new(
         &app,
         "gateway1",
         &json!({"credentials": {"credentials": [
@@ -82,16 +88,22 @@ async fn test_send_telemetry_gateway_pass(
     )
     .expect("Gateway to be created");
 
+    let device = app
+        .create_device(
+            "device1",
+            &json!({ "gatewaySelector": {"matchNames": ["gateway1"]} }),
+        )
+        .expect("Create new device");
+
     test_single_mqtt_to_mqtt_message(
         &mut ctx,
         MqttQoS::QoS0,
         (endpoint_version, endpoint_ws).into(),
         (integration_version, integration_ws).into(),
         &app,
+        &gateway,
+        &device,
         TestData {
-            app: app_name.clone(),
-            device: "device1".into(),
-            spec: json!({ "gatewaySelector": {"matchNames": ["gateway1"]} }),
             auth: Auth::UsernamePassword(format!("gateway1@{}", app_name), "foo".into()),
             send_as: SendAs::Gateway {
                 device: "device1".into(),

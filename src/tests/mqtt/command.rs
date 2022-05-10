@@ -89,17 +89,23 @@ async fn perform_simple(
         .expect("Create a new application")
         .expect_ready();
 
+    let device = Device::new(
+        &app,
+        "device1",
+        &json!({"credentials": {"credentials": [
+            { "pass": "foo" }
+        ]}}),
+    )
+    .expect("Gateway to be created");
+
     test_single_mqtt_command(
         &mut ctx,
         &app,
+        &device,
+        &device,
         variant,
         options,
         TestData {
-            app: app_name.clone(),
-            device: "device1".into(),
-            spec: json!({"credentials": {"credentials": [
-                { "pass": "foo" }
-            ]}}),
             auth: Auth::UsernamePassword(format!("device1@{}", app_name), "foo".into()),
             ..Default::default()
         },
@@ -162,7 +168,7 @@ async fn perform_gateway(
         .expect("Create a new application")
         .expect_ready();
 
-    let _gateway = Device::new(
+    let gateway = Device::new(
         &app,
         "gateway1",
         &json!({"credentials": {"credentials": [
@@ -171,15 +177,21 @@ async fn perform_gateway(
     )
     .expect("Gateway to be created");
 
+    let device = Device::new(
+        &app,
+        "device1",
+        &json!({ "gatewaySelector": {"matchNames": ["gateway1"]} }),
+    )
+    .expect("Device to be created");
+
     test_single_mqtt_command(
         &mut ctx,
         &app,
+        &gateway,
+        &device,
         variant,
         options,
         TestData {
-            app: app_name.clone(),
-            device: "device1".into(),
-            spec: json!({ "gatewaySelector": {"matchNames": ["gateway1"]} }),
             auth: Auth::UsernamePassword(format!("gateway1@{}", app_name), "foo".into()),
             send_as: SendAs::Gateway {
                 device: "device1".into(),
@@ -202,16 +214,14 @@ struct CommandOptions<'o> {
 async fn test_single_mqtt_command(
     ctx: &mut TestContext,
     app: &Application,
+    _sender: &Device<'_>,
+    device: &Device<'_>,
     variant: MqttVariant,
     options: CommandOptions<'_>,
     data: TestData,
 ) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
     let info = ctx.info().await?;
-
-    let device = app
-        .create_device(data.device, &data.spec)
-        .expect("Create new device");
 
     log::info!("Sending payload");
 
@@ -224,7 +234,7 @@ async fn test_single_mqtt_command(
 
     // send the http command
 
-    let command = send_http_command(&info, &drg, app, &device, options.command).await?;
+    let command = send_http_command(&info, &drg, app, device, options.command).await?;
 
     // assert command response
 
