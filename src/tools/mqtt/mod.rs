@@ -74,6 +74,16 @@ impl From<MqttQoS> for i32 {
     }
 }
 
+impl From<MqttQoS> for rumqttc::QoS {
+    fn from(qos: MqttQoS) -> Self {
+        match qos {
+            MqttQoS::QoS0 => rumqttc::QoS::AtMostOnce,
+            MqttQoS::QoS1 => rumqttc::QoS::AtLeastOnce,
+            MqttQoS::QoS2 => rumqttc::QoS::ExactlyOnce,
+        }
+    }
+}
+
 pub fn scrub_uri<S>(uri: S) -> String
 where
     S: AsRef<str>,

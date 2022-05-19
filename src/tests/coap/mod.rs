@@ -1,4 +1,3 @@
-use crate::tools::http::HttpSenderOptions;
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
@@ -6,8 +5,9 @@ use crate::{
     tools::{
         assert::{assert_msgs, CloudMessage},
         coap::CoapSender,
+        http::HttpSenderOptions,
         messages::WaitForMessages,
-        mqtt::{MqttQoS, MqttReceiver, MqttVersion},
+        mqtt::{paho::MqttReceiver, MqttQoS, MqttVersion, WarmupReceiver},
         warmup::HttpWarmup,
         Auth,
     },

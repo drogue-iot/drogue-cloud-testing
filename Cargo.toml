@@ -5,50 +5,39 @@ authors = ["Jens Reimann <jreimann@redhat.com>"]
 edition = "2021"
 
 [dependencies]
-log = "0.4"
-env_logger = "0.8"
 anyhow = "1"
-
+async-std = "1"
+async-trait = "0.1"
+base64 = "0.13"
+coap = "0.11"
+coap-lite = "0.7"
+drogue-client = "0.8.0"
+env_logger = "0.8"
+fantoccini = "0.19"
+futures = "0.3"
+log = "0.4"
 maplit = "1"
-
-url = { version = "2", features = ["serde"] }
-reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
-rustls = "0.19"
 pem = "0.8"
-
+regex = "1.5"
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+rstest = "0.11"
+rumqttc = "0.12"
+rustls = "0.19"
 serde = "1"
 serde_json = "1"
-
-async-trait = "0.1"
+serde_urlencoded = "0.7"
+tempfile = "3.3"
 test-context = "0.1"
-rstest = "0.11"
-
-async-std = "1"
-
-futures = "0.3"
-
-fantoccini = "0.19"
-
-tempfile = "3"
-base64 = "0.13"
-uuid = { version = "0.8", features = ["v4"] }
-
 tokio = { version = "1.7", features = ["full", "rt-multi-thread"] }
+tokio-tungstenite = "0.15.0"
+url = { version = "2", features = ["serde"] }
+uuid = { version = "0.8", features = ["v4"] }
 
 # disable bundled to use the system version of paho, which might have stack tracing enabled
 paho-mqtt = { version = "0.9", default-features = false, features = ["bundled", "ssl"] }
-
-coap = "0.11"
-coap-lite = "0.5"
-
-regex = "1.5"
-serde_urlencoded = "0.7"
-
-drogue-client = "0.8.0"
-
-tokio-tungstenite = "0.15.0"
 
 [patch.crates-io]
 #drogue-client = { path = "../drogue-client" }
 #drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "5ff15f91aab49c584af9fb244870c13fecd2c916"} # awaiting release
 paho-mqtt-sys = { git = "https://github.com/eclipse/paho.mqtt.rust.git", rev = "d3280b3a2bd894fba223bd2c4bb3d4df1a06c646" } # awaiting release
+#rumqttc = { git = "https://github.com/ctron/rumqtt", rev = "63ed7c925b0e28310fc68a029dc41b1d6575c538" } # awaiting release with MQTT v5
