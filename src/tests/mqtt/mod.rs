@@ -1,14 +1,11 @@
 use crate::{
     context::TestContext,
     init::token::TokenProvider,
-    resources::{
-        devices::Device, apps::Application
-    },
+    resources::{apps::Application, devices::Device},
     tools::{
         assert::{assert_msgs, CloudMessage},
         messages::WaitForMessages,
-        mqtt::{paho::MqttReceiver, MqttDevice, MqttQoS, scrub_uri, MqttVariant, WarmupReceiver},
-        mqtt::{},
+        mqtt::{paho::MqttReceiver, scrub_uri, MqttDevice, MqttQoS, MqttVariant, WarmupReceiver},
         warmup::HttpWarmup,
         Auth, SendAs,
     },

@@ -1,11 +1,10 @@
 use crate::{
     context::TestContext,
-    http::HttpSenderOptions,
     init::token::TokenProvider,
     resources::apps::Application,
     tools::{
         assert::{assert_msgs, CloudMessage},
-        http::HttpSender,
+        http::{HttpSender, HttpSenderOptions},
         messages::WaitForMessages,
         mqtt::{paho::MqttReceiver, MqttQoS, MqttVersion, WarmupReceiver},
         warmup::HttpWarmup,
