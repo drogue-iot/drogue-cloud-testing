@@ -116,8 +116,9 @@ impl Drg {
         Ok(())
     }
 
-    pub fn version_str(&self) -> anyhow::Result<String> {
-        self.run(&["version"])
+    pub fn version(&self) -> anyhow::Result<Value> {
+        let output = self.run(&["version", "-o", "json"])?;
+        Ok(serde_json::from_str(&output)?)
     }
 
     #[allow(dead_code)]
