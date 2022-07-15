@@ -7,9 +7,7 @@ async fn test_drg_version(ctx: &mut TestContext) -> anyhow::Result<()> {
     let drg = ctx.drg().await?;
 
     let version = drg.version()?;
-    assert_eq!("0.10.2",
-        version.get("drg").unwrap().as_str().unwrap()
-    );
+    assert_eq!("0.10.2", version.get("drg").unwrap().as_str().unwrap());
 
     Ok(())
 }
