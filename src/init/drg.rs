@@ -137,7 +137,7 @@ impl Drg {
     }
 
     pub fn get_app(&self, name: &str) -> anyhow::Result<serde_json::Value> {
-        let json = self.run(&["get", "app", name])?;
+        let json = self.run(&["get", "app", name, "-o", "json"])?;
         Ok(serde_json::from_str(&json)?)
     }
 
@@ -166,7 +166,7 @@ impl Drg {
 
     #[allow(dead_code)]
     pub fn get_device(&self, app: &str, name: &str) -> anyhow::Result<serde_json::Value> {
-        let json = self.run(&["get", "device", "-a", app, name])?;
+        let json = self.run(&["get", "device", "-a", app, name, "-o", "json"])?;
         Ok(serde_json::from_str(&json)?)
     }
 }
