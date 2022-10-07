@@ -861,7 +861,7 @@ checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 [[package]]
 name = "drogue-bazaar"
 version = "0.3.0"
-source = "git+https://github.com/drogue-iot/drogue-bazaar.git?rev=76c9d4e2a50215ea3892646cfbebb72a0987e741#76c9d4e2a50215ea3892646cfbebb72a0987e741"
+source = "git+https://github.com/drogue-iot/drogue-bazaar.git?rev=e0695894f5292af86a38043aa8168cd273682ff8#e0695894f5292af86a38043aa8168cd273682ff8"
 dependencies = [
  "actix-cors",
  "actix-http",
