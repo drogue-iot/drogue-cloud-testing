@@ -29,6 +29,6 @@ impl CoapSender {
 
         log::debug!("Client request: {}", url);
 
-        Ok(helper::get(url, channel, content_type, options, payload, auth).await?)
+        Ok(helper::post(url, channel, content_type, options, payload, auth).await?)
     }
 }
