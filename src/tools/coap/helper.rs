@@ -1,6 +1,5 @@
 use bytes::Bytes;
 use coap_lite::{CoapOption, CoapRequest, CoapResponse, Packet, RequestType};
-use drogue_bazaar::udp::UdpStream;
 use futures::{SinkExt, StreamExt};
 use openssl::ssl::{Ssl, SslContext, SslMethod};
 use regex::Regex;
@@ -9,6 +8,7 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use tokio::net::UdpSocket;
 use tokio::sync::mpsc;
+use tokio_dtls_stream_sink::Client as DtlsClient;
 use tokio_openssl::SslStream;
 use tokio_util::codec::{BytesCodec, Decoder};
 use url::{form_urlencoded, Url};
@@ -55,94 +55,21 @@ pub async fn post(
 
     let dest = (domain.as_str(), port);
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
+    let client = DtlsClient::new(socket);
 
     let mut ctx = SslContext::builder(SslMethod::dtls())?;
     ctx.set_ca_file(tls::default_ca_certs_path()?)?;
     let ctx = ctx.build();
 
-    let (tx_out, mut rx_out): (mpsc::Sender<(SocketAddr, Bytes)>, _) = mpsc::channel(10);
-    let (tx_in, rx_in) = mpsc::channel(10);
-
-    // Spawn IO thread
-    let io = tokio::spawn(async move {
-        let mut buf = [0; 2048];
-        loop {
-            tokio::select! {
-                inbound = socket.recv_from(&mut buf) => {
-                    match inbound {
-                        Ok((size, src)) => {
-                            if let Err(e) = tx_in.send(Bytes::copy_from_slice(&buf[..size])).await {
-                                log::warn!("IO error: {:?}", e);
-                                break;
-                            }
-                        }
-                        Err(e) => {
-                            log::warn!("IO error: {:?}", e);
-                            break;
-                        }
-                    }
-                }
-                outbound = rx_out.recv() => {
-                    if let Some((dest, data)) = outbound {
-                        match socket.send_to(&data[..], &dest).await {
-                            Ok(_) => {}
-                            Err(e) => {
-                                log::warn!("IO error: {:?}", e);
-                                break;
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-    });
-
-    let udp = UdpStream::new(dest, tx_out, rx_in)?;
-    let mut dtls = Box::pin(SslStream::new(Ssl::new(&ctx)?, udp)?);
-    dtls.as_mut().connect().await?;
-    let (sink, stream) = BytesCodec::new().framed(dtls).split();
-    let mut sink = Box::pin(sink);
-    let mut stream = Box::pin(stream);
-
+    let mut session = client.connect(dest, Some(&ctx)).await?;
     let payload = packet.message.to_bytes()?;
-    sink.send(Bytes::copy_from_slice(&payload[..])).await?;
+    session.write(&payload[..]).await?;
 
-    let timeout = tokio::time::sleep(Duration::from_secs(30));
-    let mut result = None;
-    loop {
-        tokio::select! {
-            _ = timeout => {
-                result.replace(Err(anyhow::anyhow!("Timed out waiting for response")));
-                break;
-            }
-            r = stream.next() => match r {
-                Some(Ok(payload)) => {
-                    let packet = Packet::from_bytes(&payload[..])?;
-                    result.replace(Ok(CoapResponse {
-                        message: packet,
-                    }));
-                    break;
-                }
-                Some(Err(e)) => {
-                    log::warn!("Error reading response: {:?}", e);
-                    result.replace(Err(e.into()));
-                    break;
-                }
-                _ => {
-                    break;
-                }
-            }
-        }
-    }
+    let mut rx_buf = [0; 2048];
 
-    drop(sink);
-    drop(stream);
-    log::info!("Waiting for I/O task to complete");
-    let _ = io.await;
-
-    result.unwrap_or(Err(anyhow::anyhow!("No result found")))
+    let len = session.read(&mut rx_buf[..]).await?;
+    let packet = Packet::from_bytes(&rx_buf[..len])?;
+    Ok(CoapResponse { message: packet });
 }
 
 fn parse_coap_url(url: String) -> Result<(String, u16, String)> {

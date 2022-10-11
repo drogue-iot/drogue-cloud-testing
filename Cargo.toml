@@ -36,7 +36,7 @@ openssl = { version = "0.10", features = ["v111"] }
 tokio-openssl = "0.6"
 tokio-util = "0.7"
 bytes = "1"
-drogue-bazaar = { version = "0.3", features = ["udp"] }
+tokio-dtls-stream-sink = "0.5"
 
 # disable bundled to use the system version of paho, which might have stack tracing enabled
 paho-mqtt = { version = "0.9", default-features = false, features = ["bundled", "ssl"] }
