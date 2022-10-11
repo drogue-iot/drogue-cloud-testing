@@ -45,5 +45,4 @@ paho-mqtt = { version = "0.9", default-features = false, features = ["bundled", 
 #drogue-client = { path = "../drogue-client" }
 #drogue-client = { git = "https://github.com/drogue-iot/drogue-client", rev = "5ff15f91aab49c584af9fb244870c13fecd2c916"} # awaiting release
 paho-mqtt-sys = { git = "https://github.com/eclipse/paho.mqtt.rust.git", rev = "d3280b3a2bd894fba223bd2c4bb3d4df1a06c646" } # awaiting release
-drogue-bazaar = { git = "https://github.com/drogue-iot/drogue-bazaar.git", rev = "e0695894f5292af86a38043aa8168cd273682ff8"}
 #rumqttc = { git = "https://github.com/ctron/rumqtt", rev = "63ed7c925b0e28310fc68a029dc41b1d6575c538" } # awaiting release with MQTT v5

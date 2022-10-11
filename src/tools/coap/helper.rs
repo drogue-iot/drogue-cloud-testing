@@ -1,16 +1,10 @@
-use bytes::Bytes;
 use coap_lite::{CoapOption, CoapRequest, CoapResponse, Packet, RequestType};
-use futures::{SinkExt, StreamExt};
-use openssl::ssl::{Ssl, SslContext, SslMethod};
+use openssl::ssl::{SslContext, SslMethod};
 use regex::Regex;
 use std::io::{Error, ErrorKind, Result};
 use std::net::SocketAddr;
-use std::time::Duration;
 use tokio::net::UdpSocket;
-use tokio::sync::mpsc;
 use tokio_dtls_stream_sink::Client as DtlsClient;
-use tokio_openssl::SslStream;
-use tokio_util::codec::{BytesCodec, Decoder};
 use url::{form_urlencoded, Url};
 
 use crate::tools::http::HttpSenderOptions;
@@ -61,7 +55,7 @@ pub async fn post(
     ctx.set_ca_file(tls::default_ca_certs_path()?)?;
     let ctx = ctx.build();
 
-    let mut session = client.connect(dest, Some(&ctx)).await?;
+    let mut session = client.connect(dest, Some(ctx)).await?;
     let payload = packet.message.to_bytes()?;
     session.write(&payload[..]).await?;
 
@@ -69,7 +63,7 @@ pub async fn post(
 
     let len = session.read(&mut rx_buf[..]).await?;
     let packet = Packet::from_bytes(&rx_buf[..len])?;
-    Ok(CoapResponse { message: packet });
+    Ok(CoapResponse { message: packet })
 }
 
 fn parse_coap_url(url: String) -> Result<(String, u16, String)> {
