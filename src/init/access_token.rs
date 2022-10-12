@@ -65,6 +65,22 @@ pub async fn create_access_token_web(
     web.screenshot("create_access_token_web/after-click")
         .await?;
 
+    let btn_confirm = web
+        .wait()
+        .for_element(Locator::Id("confirm-create-token"))
+        .await
+        .context("Failed to wait for button to confirm create access token")?;
+
+    log::debug!("Got button ({:?}), clicking it ...", btn_confirm);
+
+    web.screenshot("create_access_token_web/before-click-confirm")
+        .await?;
+
+    btn_confirm.click().await?;
+
+    web.screenshot("create_access_token_web/after-click-confirm")
+        .await?;
+
     let clp = web
         .wait()
         .for_element(Locator::Css(
