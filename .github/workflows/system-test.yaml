@@ -40,7 +40,7 @@ on:
 
 env:
   HCLOUD_VERSION: "1.30.3"
-  VERSION_HELM: "v3.9.3"
+  VERSION_HELM: "v3.10.1"
 
 jobs:
 
