@@ -74,11 +74,11 @@ apt:
 
 
 packages:
-  - liblttng-ust0
+  - liblttng-ust1
   - libkrb5-3
   - zlib1g
-  - libssl1.1
-  - libicu66
+  - libssl3
+  - libicu70
   - libc-dev
   - pkg-config
   - cmake
@@ -90,8 +90,10 @@ packages:
   - libvirt-daemon-system
   - libvirt-clients
   - bridge-utils
-  - docker-ce
   - jq
+# from the docker source
+  - docker-ce
+
 
 users:
   - name: builder
