@@ -233,7 +233,7 @@ jobs:
 
       - name: Install markdown-test-report
         run: |
-          curl -sL https://github.com/ctron/markdown-test-report/releases/download/v0.3.4/markdown-test-report -o "$HOME/.local/bin/markdown-test-report"
+          curl -sL https://github.com/ctron/markdown-test-report/releases/download/v0.3.4/markdown-test-report-linux-amd64 -o "$HOME/.local/bin/markdown-test-report"
           chmod a+x "$HOME/.local/bin/markdown-test-report"
 
       # get the content to test
