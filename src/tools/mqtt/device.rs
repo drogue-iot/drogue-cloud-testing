@@ -46,7 +46,7 @@ impl MqttDevice {
             MqttVersion::V5(_) => create_opts.mqtt_version(paho_mqtt::MQTT_VERSION_5),
         };
 
-        let mut client = paho_mqtt::AsyncClient::new(create_opts.finalize())
+        let client = paho_mqtt::AsyncClient::new(create_opts.finalize())
             .context("Failed to create client")?;
 
         let mut ssl_opts = paho_mqtt::SslOptionsBuilder::new();

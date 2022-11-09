@@ -100,9 +100,9 @@ impl TestContext {
         }
     }
 
-    pub async fn registry<TP>(&mut self, provider: TP) -> anyhow::Result<registry::v1::Client<TP>>
+    pub async fn registry<TP>(&mut self, provider: TP) -> anyhow::Result<registry::v1::Client>
     where
-        TP: TokenProvider<Error = reqwest::Error>,
+        TP: TokenProvider + 'static,
     {
         let client = self.client().await?;
         let info = self.info().await?;

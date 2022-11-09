@@ -20,13 +20,11 @@ async fn test_registry_create_app(ctx: &mut TestContext) -> anyhow::Result<()> {
         .await
         .context("Get registry client")?;
 
-    reg.create_app(&new_app(&uuid, json!({})), Default::default())
+    reg.create_app(&new_app(&uuid, json!({})))
         .await
         .context("App created")?;
 
-    reg.delete_app(&uuid, Default::default())
-        .await
-        .context("App deleted")?;
+    reg.delete_app(&uuid).await.context("App deleted")?;
 
     Ok(())
 }
