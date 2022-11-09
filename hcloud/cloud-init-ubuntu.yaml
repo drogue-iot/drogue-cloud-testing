@@ -7,7 +7,7 @@ apt:
   preserve_sources_list: true
   sources:
     docker.list:
-      source: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+      source: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
       key: |
         -----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -121,7 +121,7 @@ runcmd:
       cd /home/builder/actions-runner
       curl -L @@RUNNER_URL@@ -o runner.tar.gz
       tar xzf runner.tar.gz
-      env ./config.sh --unattended --url https://github.com/drogue-iot/drogue-cloud-testing --labels hetzner,@@RUNNER@@ --replace --token @@TOKEN@@
+      env ./config.sh --unattended --ephemeral --url https://github.com/drogue-iot/drogue-cloud-testing --labels hetzner,@@RUNNER@@ --replace --token @@TOKEN@@
 
   - - bash
     - -c
