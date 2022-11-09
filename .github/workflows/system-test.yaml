@@ -382,15 +382,27 @@ jobs:
             markdown-test-report
           fi
 
+      - name: Render PR comment
+        if: ${{ always() && ( github.event.inputs.prNr != '' ) && ( needs.init.outputs.needBuild == 'true' ) }}
+        env:
+          GH_TOKEN: ${{ secrets.API_PAT }}
+        run: |
+          if markdown-test-report --git drogue-cloud --no-front-matter --summary --output - > "comment.md"; then
+            echo "**Report:** ${REPORT_PAGE_URL}" >> "comment.md"
+          else
+            echo "Test run finished, but did not create a test report: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "comment.md"
+          fi
+          gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F "comment.md"
+
       - name: Upload raw test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: test-output
           path: |
-            results.xml
             test-output.json
             test-output.md
+            comment.md
 
       - name: Revert changes
         if: ${{ always() }}
@@ -429,45 +441,6 @@ jobs:
         with:
           name: screenshots
           path: screenshots
-
-      - name: Append PR comment
-        if: ${{ always() && ( github.event.inputs.prNr != '' ) && ( needs.init.outputs.needBuild == 'true' ) }}
-        env:
-          GH_TOKEN: ${{ secrets.API_PAT }}
-        run: |
-          if markdown-test-report --git drogue-cloud --no-front-matter --summary --output - > "$RUNNER_TEMP/comment.md"; then
-            echo "**Report:** ${REPORT_PAGE_URL}" >> "$RUNNER_TEMP/comment.md"
-          else
-            echo "Test run finished, but did not create a test report: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$RUNNER_TEMP/comment.md"
-          fi
-          gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F "$RUNNER_TEMP/comment.md"
-
-      - name: Publish test results
-        # this should be the last action, as it checks out a different branch
-        # TODO: publish test results in a different repository
-        if: ${{ always() }}
-        run: |
-          git config --global user.name "GitHub workflow"
-          git config --global user.email 'ctron@users.noreply.github.com'
-
-          git checkout gh-pages
-          # update before modifying
-          git fetch
-          git rebase origin/gh-pages
-
-          cp test-output.md _posts/${REPORT_PAGE_ID}.md
-
-          git add -A -- _posts
-          if ! git diff --cached --exit-code -- _posts; then
-            echo "Changes have been detected, commit and push ..."
-            git commit -m "Automatic update ($GITHUB_RUN_ID/$GITHUB_RUN_NUMBER)"
-            git log --graph --abbrev-commit --date=relative -n 5
-            git push
-
-            echo "::notice title=Test Report::${REPORT_PAGE_URL}"
-          else
-            echo "No changes have been detected since last build, nothing to publish"
-          fi
 
       - name: Delay cleanup
         if: ${{ github.event.inputs.delayCleanup }}
@@ -511,3 +484,55 @@ jobs:
             echo "ID: $id"
             gh api -X DELETE repos/${{ github.repository }}/actions/runners/$id
           done
+
+  publish-results:
+    name: Publish results
+    needs:
+      - init
+      - test
+    runs-on: ubuntu-22.04
+    if: ${{ always() }} # results should always get published
+
+    steps:
+
+      - name: Fetch test output
+        uses: actions/download-artifact@v3
+        with:
+          name: test-output
+          path: output
+
+      - name: List output
+        run: find .
+        working-directory: test-output
+
+      - name: Append PR comment
+        if: ${{ github.event.inputs.prNr != '' && needs.init.outputs.needBuild == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.API_PAT }}
+        working-directory: test-output
+        run: |
+          gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F "comment.md"
+
+      - uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+
+      - name: Publish test results
+        # TODO: publish test results in a different repository
+        run: |
+          git config --global user.name "GitHub workflow"
+          git config --global user.email 'ctron@users.noreply.github.com'
+
+          cp test-output/test-output.md _posts/${REPORT_PAGE_ID}.md
+
+          git add -A -- _posts
+          if ! git diff --cached --exit-code -- _posts; then
+            echo "Changes have been detected, commit and push ..."
+            git commit -m "Automatic update ($GITHUB_RUN_ID/$GITHUB_RUN_NUMBER)"
+            git log --graph --abbrev-commit --date=relative -n 5
+            git push
+
+            echo "::notice title=Test Report::${REPORT_PAGE_URL}"
+          else
+            echo "No changes have been detected since last build, nothing to publish"
+          fi
