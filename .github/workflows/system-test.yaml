@@ -63,13 +63,13 @@ jobs:
         env:
           CLUSTER: ${{ github.event.inputs.cluster }}
         run: |
-          echo "::set-output name=cluster::${CLUSTER:-kind}"
+          echo "cluster=${CLUSTER:-kind}" >> $GITHUB_OUTPUT
 
       - id: needBuild
         name: Evaluate if we need a local build
         run: |
           echo "Release URL: ${{ github.event.inputs.releaseUrl }}"
-          echo "::set-output name=needBuild::${{ github.event.inputs.releaseUrl == '' }}"
+          echo "needBuild=${{ github.event.inputs.releaseUrl == '' }}" >> $GITHUB_OUTPUT
 
       - id: localBuild
         name: Evaluate local build information
@@ -77,8 +77,8 @@ jobs:
           GIT_REPO: ${{ github.event.inputs.localBuildRepo }}
           GIT_REF: ${{ github.event.inputs.localBuildRef }}
         run: |
-          echo "::set-output name=buildRepo::${GIT_REPO:-https://github.com/drogue-iot/drogue-cloud}"
-          echo "::set-output name=buildRef::${GIT_REF:-main}"
+          echo "buildRepo=${GIT_REPO:-https://github.com/drogue-iot/drogue-cloud}" >> $GITHUB_OUTPUT
+          echo "buildRef=${GIT_REF:-main}" >> $GITHUB_OUTPUT
 
       - id: build
         name: Generate the build timestamp and some values with it
@@ -86,11 +86,11 @@ jobs:
           Y=$(date "+%Y")
           M=$(date "+%m")
           D=$(date "+%d")
-          echo "::set-output name=year::${Y}"
-          echo "::set-output name=month::${M}"
-          echo "::set-output name=day::${D}"
-          echo "::set-output name=reportId::${Y}-${M}-${D}-test-run-${GITHUB_RUN_ID}"
-          echo "::set-output name=reportUrl::https://drogue-iot.github.io/drogue-cloud-testing/test-report/${Y}/${M}/${D}/test-run-${GITHUB_RUN_ID}.html"
+          echo "name=year=${Y}" >> $GITHUB_OUTPUT
+          echo "name=month=${M}" >> $GITHUB_OUTPUT
+          echo "name=day=${D}" >> $GITHUB_OUTPUT
+          echo "reportId=${Y}-${M}-${D}-test-run-${GITHUB_RUN_ID}" >> $GITHUB_OUTPUT
+          echo "reportUrl=https://drogue-iot.github.io/drogue-cloud-testing/test-report/${Y}/${M}/${D}/test-run-${GITHUB_RUN_ID}.html" >> $GITHUB_OUTPUT
 
   create-runner:
     name: Create runner
@@ -98,9 +98,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: 3bit/setup-hcloud@v1
-        with:
-          hcloud-version: ${{ env.HCLOUD_VERSION }}
+
+      - name: Install hcloud CLI
+        run: |
+          mkdir -p download
+          cd download
+          curl -sSL https://github.com/hetznercloud/cli/releases/download/v${HCLOUD_VERSION}/hcloud-linux-amd64.tar.gz -o hcloud.tar.gz
+          tar xzf hcloud.tar.gz
+          install hcloud /usr/local/bin
 
       - name: Check hcloud binary
         env:
@@ -124,7 +129,7 @@ jobs:
 
           cat init.yaml
 
-          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-20.04 --type "${SERVER_TYPE:-ccx22}" --ssh-key 3746242 --user-data-from-file init.yaml
+          hcloud server create --name testing-runner-${{github.run_id}} --datacenter hel1-dc2 --image ubuntu-22.04 --type "${SERVER_TYPE:-ccx22}" --ssh-key 3746242 --user-data-from-file init.yaml
 
       - name: Waiting for runner to become ready
         id: runner
@@ -139,7 +144,7 @@ jobs:
             ID=$(gh api repos/${{ github.repository }}/actions/runners --jq '.runners[]? | select(.name=="testing-runner-${{github.run_id}}") | .id')
           done
 
-          echo ::set-output name=id::${ID}
+          echo "id=${ID}" >> $GITHUB_OUTPUT
 
 
   test:
@@ -189,12 +194,6 @@ jobs:
         run: |
           sudo apt-get -y install gcc libssl-dev make httpie xvfb
 
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
       - name: Add .local/bin to path
         run: |
           mkdir -p "$HOME/.local/bin"
@@ -223,7 +222,7 @@ jobs:
 
       - name: Install kubectl
         run: |
-          curl -sL https://dl.k8s.io/release/v1.21.1/bin/linux/amd64/kubectl -o "$HOME/.local/bin/kubectl"
+          curl -sL https://dl.k8s.io/release/v1.25.3/bin/linux/amd64/kubectl -o "$HOME/.local/bin/kubectl"
           chmod a+x "$HOME/.local/bin/kubectl"
 
       - name: Install Minikube
@@ -483,9 +482,13 @@ jobs:
     if: ${{ always() }} # the runner must always be deleted
 
     steps:
-      - uses: 3bit/setup-hcloud@v1
-        with:
-          hcloud-version: ${{ env.HCLOUD_VERSION }}
+      - name: Install hcloud CLI
+        run: |
+          mkdir -p download
+          cd download
+          curl -sSL https://github.com/hetznercloud/cli/releases/download/v${HCLOUD_VERSION}/hcloud-linux-amd64.tar.gz -o hcloud.tar.gz
+          tar xzf hcloud.tar.gz
+          install hcloud /usr/local/bin
 
       - name: Check hcloud binary
         env:
