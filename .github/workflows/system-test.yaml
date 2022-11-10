@@ -499,6 +499,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: test-output
+          path: test-output
 
       - name: List output
         run: find .
