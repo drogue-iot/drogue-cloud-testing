@@ -174,6 +174,10 @@ jobs:
           echo "REPORT_PAGE_ID=${{ needs.init.outputs.buildReportId }}" >> $GITHUB_ENV
           echo "REPORT_PAGE_URL=${{ needs.init.outputs.buildReportUrl }}" >> $GITHUB_ENV
 
+      - name: Add .cargo/bin to path
+        run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH 
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # required to switch branch later
