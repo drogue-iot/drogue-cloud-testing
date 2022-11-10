@@ -495,6 +495,11 @@ jobs:
 
     steps:
 
+      - uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+          path: repo
+
       - name: Fetch test output
         uses: actions/download-artifact@v3
         with:
@@ -502,28 +507,24 @@ jobs:
           path: test-output
 
       - name: List output
-        run: find .
-        working-directory: test-output
+        run: find test-output
 
       - name: Append PR comment
         if: ${{ github.event.inputs.prNr != '' && needs.init.outputs.needBuild == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.API_PAT }}
-        working-directory: test-output
         run: |
-          gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F "comment.md"
-
-      - uses: actions/checkout@v3
-        with:
-          ref: gh-pages
+          gh pr comment --repo drogue-iot/drogue-cloud "${{ github.event.inputs.prNr }}" -F "test-output/comment.md"
 
       - name: Publish test results
         # TODO: publish test results in a different repository
         run: |
+          cd repo
+          
           git config --global user.name "GitHub workflow"
           git config --global user.email 'ctron@users.noreply.github.com'
 
-          cp test-output/test-output.md _posts/${REPORT_PAGE_ID}.md
+          cp ../test-output/test-output.md _posts/${REPORT_PAGE_ID}.md
 
           git add -A -- _posts
           if ! git diff --cached --exit-code -- _posts; then
