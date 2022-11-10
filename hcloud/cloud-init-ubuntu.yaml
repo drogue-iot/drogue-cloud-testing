@@ -91,6 +91,7 @@ packages:
   - libvirt-clients
   - bridge-utils
   - jq
+  - cargo
 # from the docker source
   - docker-ce
 

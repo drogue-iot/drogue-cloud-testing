@@ -210,8 +210,6 @@ jobs:
 
       - name: Build drg
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source $HOME/.cargo/env
           cargo install drg --version 0.10.2 --force
 
       - name: Check drg version
