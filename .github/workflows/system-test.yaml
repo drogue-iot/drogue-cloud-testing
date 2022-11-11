@@ -507,6 +507,10 @@ jobs:
 
     steps:
 
+      - run: |
+          echo "REPORT_PAGE_ID=${{ needs.init.outputs.buildReportId }}" >> $GITHUB_ENV
+          echo "REPORT_PAGE_URL=${{ needs.init.outputs.buildReportUrl }}" >> $GITHUB_ENV
+
       - uses: actions/checkout@v3
         with:
           ref: gh-pages
