@@ -82,7 +82,6 @@ packages:
   - libc-dev
   - pkg-config
   - cmake
-  - firefox
   - xdg-utils
   - curl
   - unzip
@@ -104,6 +103,20 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
 
 runcmd:
+  # fix up the mess called snap
+  # also see: https://www.omgubuntu.co.uk/2022/04/how-to-install-firefox-deb-apt-ubuntu-22-04
+  - - bash
+    - -c
+    - |
+      sudo add-apt-repository ppa:mozillateam/ppa
+      echo '
+      Package: *
+      Pin: release o=LP-PPA-mozillateam
+      Pin-Priority: 1001
+      ' | sudo tee /etc/apt/preferences.d/mozilla-firefox
+      sudo apt install firefox
+
+  # install github cli
   - - bash
     - -c
     - |
@@ -115,6 +128,7 @@ runcmd:
       apt install gh
       echo "Installing GitHub CLI ... done!"
 
+  # install github agent runner
   - - su
     - builder
     - bash
@@ -127,6 +141,7 @@ runcmd:
       tar xzf runner.tar.gz
       env ./config.sh --unattended --ephemeral --url https://github.com/drogue-iot/drogue-cloud-testing --labels hetzner,@@RUNNER@@ --replace --token @@TOKEN@@
 
+  # run the runner
   - - bash
     - -c
     - |
