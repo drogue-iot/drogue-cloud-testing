@@ -83,6 +83,7 @@ packages:
   - pkg-config
   - cmake
   - firefox
+  - xdg-utils
   - curl
   - unzip
   - zip
