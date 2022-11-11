@@ -35,7 +35,7 @@ info:
 start:
 	-drg context delete system-tests
 	-pkill geckodriver
-	geckodriver &>/dev/null &
+	geckodriver &> geckodriver.log &
 
 .PHONY: stop
 stop:

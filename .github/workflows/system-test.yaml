@@ -436,6 +436,8 @@ jobs:
             ./.github/scripts/collect_logs.sh "logs/$ns" "$ns"
           done
 
+          cp geckodriver.log logs/
+
       - name: Package logs
         if: ${{ always() }}
         run: tar czvf logs.tar.gz logs
