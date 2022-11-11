@@ -1,6 +1,6 @@
 use crate::init::config::Config;
 use crate::init::web::WebDriver;
-use fantoccini::error::CmdError;
+use fantoccini::error::{CmdError, ErrorStatus};
 use fantoccini::Locator;
 use std::time::{Duration, Instant};
 
@@ -24,7 +24,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
                 log::info!("Already logged in");
                 return Ok(());
             }
-            Err(CmdError::NoSuchElement(_)) => {}
+            Err(CmdError::Standard(w)) if w.error == ErrorStatus::NoSuchElement => {}
             Err(err) => return Err(err.into()),
         }
 
@@ -38,7 +38,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
                 log::info!("Found login button");
                 break login_button;
             }
-            Err(CmdError::NoSuchElement(_)) => {}
+            Err(CmdError::Standard(w)) if w.error == ErrorStatus::NoSuchElement => {}
             Err(err) => return Err(err.into()),
         }
 
@@ -77,7 +77,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
 
                 return Ok(());
             }
-            Err(CmdError::NoSuchElement(_)) => {}
+            Err(CmdError::Standard(w)) if w.error == ErrorStatus::NoSuchElement => {}
             Err(err) => return Err(err.into()),
         }
 
@@ -89,7 +89,7 @@ pub async fn login(web: &mut WebDriver, config: &Config) -> anyhow::Result<()> {
                 log::info!("Still had a session");
                 return Ok(());
             }
-            Err(CmdError::NoSuchElement(_)) => {}
+            Err(CmdError::Standard(w)) if w.error == ErrorStatus::NoSuchElement => {}
             Err(err) => return Err(err.into()),
         }
 
