@@ -28,7 +28,7 @@ impl Drg {
         login(c, &config).await?;
 
         // go to the token page
-        c.goto(&format!("{}/currenttoken", config.console().await?))
+        c.goto(&format!("{}/token", config.console().await?))
             .await?;
 
         let refresh_token = c

@@ -41,7 +41,7 @@ pub async fn create_access_token_web(
     web.screenshot("create_access_token_web/before-goto")
         .await?;
 
-    web.goto("/accesstokens").await?;
+    web.goto("/tokens").await?;
 
     web.screenshot("create_access_token_web/after-goto").await?;
 
